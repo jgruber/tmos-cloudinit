@@ -1,5 +1,5 @@
 # tmos-cloudinit
-###Cloudinit Modules and Patching for F5  TMOS###
+### Cloudinit Modules and Patching for F5  TMOS ###
 
 F5 TMOS is a secured and close operating system which can not take advantage of the linux community's work to standardize cloud virtual machine onboarding through the cloud-init project.
 
@@ -51,7 +51,7 @@ There are implicit declarations of the TMM intefaces names to use for the data p
 | as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-3|
 | as3_declaration | none | The f5-appsvcs-3 declaration to declare if enabled |
 
-####Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
+#### Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
 
 SSH keys found in the OpenStack meta_data.json file will also be injected as authorized_keys for the root account.
 
@@ -123,7 +123,7 @@ There are implicit declarations of the TMM intefaces names to use for the data p
 | as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-3|
 | as3_declaration | none | The f5-appsvcs-3 declaration to declare if enabled |
 
-####Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
+#### Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
 
 SSH keys found in the OpenStack meta_data.json file will also be injected as authorized_keys for the root account.
 
@@ -174,7 +174,7 @@ ssh_authorized_keys:
 ```
 
 
-##tms_declared##
+## tms_declared ##
 
 This module assumes the management interface provision happens in the default method (DHCPv4), but that all other onboard configurations should be handled through f5-declarative-onboarding and f5-appsvcs-3 declarations.
 
