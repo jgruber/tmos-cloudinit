@@ -204,6 +204,7 @@ tmos_declared:
         class: Provision
         ltm: nominal
         asm: minimum
+      ...
   as3_declaration:
     class: AS3
     action: deploy
