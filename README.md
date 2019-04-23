@@ -33,7 +33,7 @@ tmos_static_mgmt:
 ```
 
 ## tmos_configdrive_openstack ##
-This cloudinit module requries the use of a configdrive data source and OpenStack file format meta_data.json and network_data.json. This module extents TMOS functionality to include static provisioning off all interfaces (manaement and TMM) via either static network metadata or the use of DHCPv4 or DHCPv6. This interface includes the ability to augment the configuration data retrieved via metadata and DHCP with additiona f5-declarative-onboarding and f5-appsvc-3 declarations. Any f5-declarative-onboarding declarations will overwrite or be merged with configuration declarations defined via metadata resource resolution.
+This cloudinit module requries the use of a configdrive data source and OpenStack file format meta_data.json and network_data.json. This module extents TMOS functionality to include static provisioning off all interfaces (manaement and TMM) via either static network metadata or the use of DHCPv4 or DHCPv6. This interface includes the ability to augment the configuration data retrieved via metadata and DHCP with additiona f5-declarative-onboarding and f5-appsvc-3 declarations. Any f5-declarative-onboarding declarations will overwrite or be merged with configuration declarations defined via metadata resource resolution. This modules support both 1NIC and nNIC deployments.
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
@@ -105,7 +105,7 @@ ssh_authorized_keys:
 
 ## tmos_dhcp_tmm ##
 
-This cloudinit module resolves configuration data for all interfaces (management and TMM) through DHCPv4 or DHCPv6. All interfaces should be connected to networks with DHCP services.
+This cloudinit module resolves configuration data for all interfaces (management and TMM) through DHCPv4 or DHCPv6. All interfaces should be connected to networks with DHCP services. This modules support both 1NIC and nNIC deployments.
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
@@ -176,7 +176,9 @@ ssh_authorized_keys:
 
 ## tmos_declared ##
 
-This module assumes the management interface provision happens in the default method (DHCPv4), but that all other onboard configurations should be handled through f5-declarative-onboarding and f5-appsvcs-3 declarations.
+This module assumes the management interface provision happens in the default method (DHCPv4), but that all other onboard configurations should be handled through f5-declarative-onboarding and f5-appsvcs-3 declarations. 
+
+The declarations must be coherent with the deployment environment. As an example, the declaration would need to include the internal VLAN and the self_1nic SelfIP to properly declare a 1NIC deployment.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
