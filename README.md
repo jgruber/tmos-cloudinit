@@ -174,7 +174,7 @@ ssh_authorized_keys:
 ```
 
 
-## tms_declared ##
+## tmos_declared ##
 
 This module assumes the management interface provision happens in the default method (DHCPv4), but that all other onboard configurations should be handled through f5-declarative-onboarding and f5-appsvcs-3 declarations.
 
