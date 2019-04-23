@@ -1,25 +1,25 @@
 # tmos-cloudinit
 ### Cloudinit Modules and Patching for F5  TMOS ###
 
-F5 TMOS is a secured and close operating system which can not take advantage of the linux community's work to standardize cloud virtual machine onboarding through the cloud-init project.
+F5 TMOS is a secured and close operating system which can not take advantage of the linux community's work to standardize cloud virtual machine onboarding through the cloudinit project.
 
-Starting with TMOS v13, an order version of cloud-init was included with TMOS, but had only the following modules available:
+Starting with TMOS v13, an order version of cloudinit was included with TMOS, but had only the following modules available:
 
 - bootcmd
 - write_file
 - runcmd
 
-Through the use of these cloud-init modules, various combinates of `bash`, `javascript`, and `python` onboard scripting evolved within specific cloud ecosystems. The specifcs depended on the environment and what orchestration systems were available. 
+Through the use of these cloudinit modules, various combinates of `bash`, `javascript`, and `python` onboard scripting evolved within specific cloud ecosystems. The templating depended on the environment and what orchestration systems were available. 
 
-In an attempt to standardize these efforsts, F5 launched a set of declarative `iControl LX` extensions which can be used to configure TMOS and provision BIG-IP services. These extensions, marketed as the Automation and Orchestration (A & O) toolchain, can be installed on TMOS devices and then called through RESTful interfaces. The problem was these extensions do not come preinstalled nor do the take advantage of the configuration metadata provided by cloud environments to virtual machines instances. 
+In an attempt to standardize these efforsts, F5 launched a set of declarative `iControl LX` extensions which are used to configure TMOS and provision BIG-IP services. These extensions, marketed as the Automation and Orchestration (A & O) toolchain, can be installed on TMOS devices and then called through RESTful interfaces. These extensions do not come preinstalled nor do the take advantage of the configuration metadata provided by cloud environments to virtual machines instances through cloudinit. 
 
-The cloud-init modules need to be file-injected into standard TMOS images before they can be used.
+The cloudinit modules included in this repository need to be file-injected into standard TMOS images before they can be used.
 
 The modules all include an `enabled` attribute which must be set to `true` for any onboard configuration to take place. For the most part these modules are mutually exclusive from each other, meaning you should only use the one that fits your deployment environment.
 
 ## tmos_static_mgmt ##
 
-This cloud-init module extents TMOS to allow for static address assignment provided through cloud-init userdata. This modules support both 1NIC and nNIC deployments.
+This cloudinit module extents TMOS to allow for static address assignment provided through cloudinit userdata. This modules support both 1NIC and nNIC deployments.
 
 ### usage ###
 
@@ -33,7 +33,7 @@ tmos_static_mgmt:
 ```
 
 ## tmos_configdrive_openstack ##
-This cloud-init module requries the use of a configdrive data source and OpenStack file format meta_data.json and network_data.json. This module extents TMOS functionality to include static provisioning off all interfaces (manaement and TMM) via either static network metadata or the use of DHCPv4 or DHCPv6. This interface includes the ability to augment the configuration data retrieved via metadata and DHCP with additiona f5-declarative-onboarding and f5-appsvc-3 declarations. Any f5-declarative-onboarding declarations will overwrite or be merged with configuration declarations defined via metadata resource resolution.
+This cloudinit module requries the use of a configdrive data source and OpenStack file format meta_data.json and network_data.json. This module extents TMOS functionality to include static provisioning off all interfaces (manaement and TMM) via either static network metadata or the use of DHCPv4 or DHCPv6. This interface includes the ability to augment the configuration data retrieved via metadata and DHCP with additiona f5-declarative-onboarding and f5-appsvc-3 declarations. Any f5-declarative-onboarding declarations will overwrite or be merged with configuration declarations defined via metadata resource resolution.
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
@@ -105,7 +105,7 @@ ssh_authorized_keys:
 
 ## tmos_dhcp_tmm ##
 
-This cloud-init module resolves configuration data for all interfaces (management and TMM) through DHCPv4 or DHCPv6. All interfaces should be connected to networks with DHCP services.
+This cloudinit module resolves configuration data for all interfaces (management and TMM) through DHCPv4 or DHCPv6. All interfaces should be connected to networks with DHCP services.
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
@@ -225,7 +225,7 @@ ssh_authorized_keys:
 
 
 
-The patched cloud-init configuration template has been alterred to support the cloud-init `set_password` module. You can cahnge the built in TMOS `admin` and  `root` passwords using the following declarations.
+The patched cloudinit configuration template has been alterred to support the cloudinit `set_password` module. You can cahnge the built in TMOS `admin` and  `root` passwords using the following declarations.
 
 
 ```
