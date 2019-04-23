@@ -11,7 +11,7 @@ Starting with TMOS v13, an order version of cloudinit was included with TMOS, bu
 
 Through the use of these cloudinit modules, various combinates of `bash`, `javascript`, and `python` onboard scripting evolved within specific cloud ecosystems. The templating depended on the environment and what orchestration systems were available. 
 
-In an attempt to standardize these efforsts, F5 launched a set of declarative `iControl LX` extensions which are used to configure TMOS and provision BIG-IP services. These extensions, marketed as the Automation and Orchestration (A & O) toolchain, can be installed on TMOS devices and then called through RESTful interfaces. These extensions do not come preinstalled nor do the take advantage of the configuration metadata provided by cloud environments to virtual machines instances through cloudinit. 
+In an attempt to standardize these efforsts, F5 launched a set of declarative `iControl LX` extensions which are used to configure TMOS and provision BIG-IP services. These extensions, marketed as the Automation and Orchestration (A & O) toolchain, can be installed on TMOS devices and then called through RESTful interfaces. These extensions do not come preinstalled nor do the take advantage of the configuration metadata provided by cloud environments to virtual machines instances through cloudinit. The cloudinit modules in this repository tie cloudinit userdata and the F5 A & O toolchain together.
 
 The cloudinit modules included in this repository need to be file-injected into standard TMOS images before they can be used.
 
