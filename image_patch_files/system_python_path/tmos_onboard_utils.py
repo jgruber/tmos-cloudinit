@@ -554,19 +554,19 @@ def download_extension(extension_url):
     dest_file = os.path.basename(extension_url)
     if os.path.isfile(tmp_file_name):
         util.del_file(tmp_file_name)
-    with requests.get(extension_url, stream=True, allow_redirects=True) as resp:
-        resp.raise_for_status()
-        cont_disp = resp.headers.get('content-disposition')
-        if cont_disp:
-            cont_disp_fn = re.findall('filename=(.+)', cont_disp)
-            if cont_disp_fn > 0:
-                dest_file = cont_disp_fn[0]
-        with open(tmp_file_name, 'wb') as out_file:
-            for chunk in resp.iter_content(chunk_size=8192):
-                if chunk:
-                    out_file.write(chunk)
+    resp = requests.get(extension_url, stream=True, allow_redirects=True)
+    resp.raise_for_status()
+    cont_disp=resp.headers.get('content-disposition')
+    if cont_disp:
+        cont_disp_fn=re.findall('filename=(.+)', cont_disp)
+        if cont_disp_fn > 0:
+            dest_file=cont_disp_fn[0]
+    with open(tmp_file_name, 'wb') as out_file:
+        for chunk in resp.iter_content(chunk_size=8192):
+            if chunk:
+                out_file.write(chunk)
     if os.path.isfile(tmp_file_name):
-        dest_file = RPM_INSTALL_DIR + '/' + dest_file
+        dest_file=RPM_INSTALL_DIR + '/' + dest_file
         util.copy(tmp_file_name, dest_file)
         return True
     return False
@@ -578,13 +578,13 @@ def install_extensions(log_progress):
         if wait_for_mcpd() and wait_for_rest_worker('/mgmt/shared/iapp/package-management-tasks/'):
             if log_progress:
                 log_progress('installing icontrol LX rpm: ' + rpm)
-            install_task_id = create_install_task(
+            install_task_id=create_install_task(
                 RPM_INSTALL_DIR + '/' + rpm)
             if log_progress:
                 log_progress('install task is: ' + install_task_id)
-            rpm_installed = False
+            rpm_installed=False
             if install_task_id:
-                rpm_installed = query_task_until_finished(
+                rpm_installed=query_task_until_finished(
                     install_task_id, log_progress)
             if rpm_installed:
                 if log_progress:
@@ -599,6 +599,6 @@ def install_extensions(log_progress):
 def clean():
     """Remove any onboarding artifacts"""
     if REMOVE_DHCP_LEASE_FILES:
-        lease_files = os.listdir(DHCP_LEASE_DIR)
+        lease_files=os.listdir(DHCP_LEASE_DIR)
         for lease_file in lease_files:
             util.del_file("%s/%s" % (DHCP_LEASE_DIR, lease_file))
