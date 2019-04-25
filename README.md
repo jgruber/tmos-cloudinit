@@ -21,6 +21,17 @@ The modules all include an `enabled` attribute which must be set to `true` for a
 
 This cloudinit module extents TMOS to allow for static address assignment provided through cloudinit userdata.
 
+| Module Attribute | Default | Description|
+| --------------------- | -----------| ---------------|
+| enabled              | false      | Activates ths module|
+| ip         | none (required)        | The management IP address or CIDR |
+| netmask | none | The management IP netmask, only required if ip is not CIDR |
+| gw | none | The management default gateway IP address |
+| mtu | 1500 | The management link MTU |
+| post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
+| post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
+
+
 ### usage ###
 
 ```
