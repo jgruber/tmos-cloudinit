@@ -27,9 +27,21 @@ This cloudinit module extents TMOS to allow for static address assignment provid
 #cloud-config
 tmos_static_mgmt:
   enabled: true
-  ip: 192.168.245.100/24
+  ip: 192.168.245.100
+  netmask: 255.255.255.0
   gw: 192.168.245.1
   mtu: 1450
+  post_onboard_enabled: true
+  post_onboard_commands:
+    - tmsh modify sys db ui.advisory.color { value orange }
+    - tmsh modify sys db ui.advisory.text { value  'Onboarded with OpenStack Metadata' }
+    - tmsh modify sys db ui.advisory.enabled { value true }
+    - tmsh modify sys db provision.extramb { value 500 }
+    - tmsh modify sys global-settings gui-setup disabled
+    - tmsh modify sys provision ltm level minimum
+    - tmsh modify sys provision asm level minimum
+    - /usr/local/bin/SOAPLicenseClient --basekey KALCE-AHJBL-RFJSD-GGNFG-MFJCDYX
+    - /usr/bin/curl https://webhook.site/d52ba6d9-653d-4817-b34e-4f927026a639
 ```
 
 ## tmos_configdrive_openstack ##
@@ -50,6 +62,8 @@ There are implicit declarations of the TMM intefaces names to use for the data p
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
 | as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-3|
 | as3_declaration | none | The f5-appsvcs-3 declaration to declare if enabled |
+| post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
+| post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 
 #### Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
 
@@ -70,6 +84,7 @@ tmos_configdrive_openstack:
     - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
     - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
     - https://github.com/F5Networks/f5-telemetry-streaming/raw/master/dist/f5-telemetry-1.2.0-1.noarch.rpm
+  post_onboard_enabled: false
   do_enabled: true
   do_declaration:
     Common:
@@ -122,6 +137,8 @@ There are implicit declarations of the TMM intefaces names to use for the data p
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
 | as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-3|
 | as3_declaration | none | The f5-appsvcs-3 declaration to declare if enabled |
+| post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
+| post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 
 #### Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
 
@@ -140,27 +157,19 @@ tmos_dhcp_tmm:
     - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
     - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
     - https://github.com/F5Networks/f5-telemetry-streaming/raw/master/dist/f5-telemetry-1.2.0-1.noarch.rpm
-  do_enabled: true
-  do_declaration:
-    Common:
-      class: Tenant
-      licenseKey:
-        class: License
-        licenseType: regKey
-        regKey: GJKDM-UJTJH-OJZVX-ZJPEG-XTJIAHI
-      provisioningLevels:
-        class: Provision
-        ltm: nominal
-        asm: minimum
-  as3_enabled: true
-  as3_declaration:
-    class: AS3
-    action: deploy
-    persist: true
-    declaration:
-      class: ADC
-      schemaVersion: 3.0.0
-      ...
+  do_enabled: false
+  as3_enabled: false
+  post_onboard_enabled: true
+  post_onboard_commands:
+    - tmsh modify sys global-settings gui-setup disabled
+    - tmsh modify sys db ui.advisory.color { value orange }
+    - tmsh modify sys db ui.advisory.text { value  'Onboarded with OpenStack Metadata' }
+    - tmsh modify sys db ui.advisory.enabled { value true }
+    - tmsh modify sys db provision.extramb { value 500 }
+    - tmsh modify sys provision ltm level minimum
+    - tmsh modify sys provision asm level minimum
+    - /usr/local/bin/SOAPLicenseClient --basekey KALCE-AHJBL-RFJSD-GGNFG-MFJCDYX
+    - /usr/bin/curl https://webhook.site/d52ba6d9-653d-4817-b34e-4f927026a639
 ```
 
 In addition to the delcared elements, this module also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
