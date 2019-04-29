@@ -245,8 +245,8 @@ def dhcp_lease_dir_exists():
         os.makedirs(DHCP_LEASE_DIR)
 
 
-def make_dhcp_request(interface, timeout=120):
-    """Makes DHCP queries out a linux link device"""
+def make_dhcp4_request(interface, timeout=120):
+    """Makes DHCPv4 queries out a linux link device"""
     dhcp_lease_dir_exists()
     tmp_conf_file = DHCP_LEASE_DIR + '/dhclient.conf'
     lease_file = DHCP_LEASE_DIR + '/' + interface + '.lease'
@@ -289,8 +289,8 @@ def make_dhcp_request(interface, timeout=120):
     return False
 
 
-def process_dhcp_lease(interface, return_options=None):
-    """Parses dhclient lease file format for metadata"""
+def process_dhcp4_lease(interface, return_options=None):
+    """Parses dhclient v4 lease file format for metadata"""
     if not return_options:
         return_options = ['subnet-mask',
                           'routers',
@@ -323,21 +323,21 @@ def process_dhcp_lease(interface, return_options=None):
     return return_data
 
 
-def process_dhcp_routes(static_routes):
-    """Processes dhclient static routes metadata"""
+def process_dhcp4_routes(static_routes):
+    """Processes dhclient v4 static routes metadata"""
     dhcp_routes = []
     if static_routes:
         static_route_list = static_routes.split(',')
         for static_route in static_route_list:
             rap = static_route.split(' ')
-            route = process_dhcp_route(rap[0], rap[1])
+            route = process_dhcp4_route(rap[0], rap[1])
             if route:
                 dhcp_routes.append(route)
     return dhcp_routes
 
 
-def process_dhcp_route(static_route, gateway):
-    """Parse single dhclient route entry into a dictionary"""
+def process_dhcp4_route(static_route, gateway):
+    """Parse single dhclient v4 route entry into a dictionary"""
     if not static_route == '0':
         route = {}
         route['network'] = static_route[static_route.find('.') + 1:]
@@ -368,11 +368,6 @@ def process_dhcp_route(static_route, gateway):
 
 def ipv4_cidr_from_netmask(netmask):
     """Convert IPv4 netmask to CIDR bits"""
-    return sum([bin(int(x)).count('1') for x in netmask.split('.')])
-
-
-def ipv6_cidr_from_netmask(netmask):
-    """Convert IPv6 netmask to CIDR bits"""
     return sum([bin(int(x)).count('1') for x in netmask.split('.')])
 
 
@@ -556,17 +551,17 @@ def download_extension(extension_url):
         util.del_file(tmp_file_name)
     resp = requests.get(extension_url, stream=True, allow_redirects=True)
     resp.raise_for_status()
-    cont_disp=resp.headers.get('content-disposition')
+    cont_disp = resp.headers.get('content-disposition')
     if cont_disp:
-        cont_disp_fn=re.findall('filename=(.+)', cont_disp)
+        cont_disp_fn = re.findall('filename=(.+)', cont_disp)
         if cont_disp_fn > 0:
-            dest_file=cont_disp_fn[0]
+            dest_file = cont_disp_fn[0]
     with open(tmp_file_name, 'wb') as out_file:
         for chunk in resp.iter_content(chunk_size=8192):
             if chunk:
                 out_file.write(chunk)
     if os.path.isfile(tmp_file_name):
-        dest_file=RPM_INSTALL_DIR + '/' + dest_file
+        dest_file = RPM_INSTALL_DIR + '/' + dest_file
         util.copy(tmp_file_name, dest_file)
         return True
     return False
@@ -578,13 +573,13 @@ def install_extensions(log_progress):
         if wait_for_mcpd() and wait_for_rest_worker('/mgmt/shared/iapp/package-management-tasks/'):
             if log_progress:
                 log_progress('installing icontrol LX rpm: ' + rpm)
-            install_task_id=create_install_task(
+            install_task_id = create_install_task(
                 RPM_INSTALL_DIR + '/' + rpm)
             if log_progress:
                 log_progress('install task is: ' + install_task_id)
-            rpm_installed=False
+            rpm_installed = False
             if install_task_id:
-                rpm_installed=query_task_until_finished(
+                rpm_installed = query_task_until_finished(
                     install_task_id, log_progress)
             if rpm_installed:
                 if log_progress:
@@ -599,6 +594,6 @@ def install_extensions(log_progress):
 def clean():
     """Remove any onboarding artifacts"""
     if REMOVE_DHCP_LEASE_FILES:
-        lease_files=os.listdir(DHCP_LEASE_DIR)
+        lease_files = os.listdir(DHCP_LEASE_DIR)
         for lease_file in lease_files:
             util.del_file("%s/%s" % (DHCP_LEASE_DIR, lease_file))
