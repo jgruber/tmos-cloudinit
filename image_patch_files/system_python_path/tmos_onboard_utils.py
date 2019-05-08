@@ -391,7 +391,7 @@ def persist_do_declaration(declaration, additional_declarations):
 
 def do_declare():
     """Makes a f5-declarative-onboarding declaration from the generated file"""
-    if is_rest_worker('/mgmt/shared/declarative-onboarding') and os.path.isfile(DO_DECLARATION_DIR):
+    if is_rest_worker('/mgmt/shared/declarative-onboarding') and os.path.isfile(DO_DECLARATION_FILE):
         dec_file = open(DO_DECLARATION_FILE, 'r')
         declaration = dec_file.read()
         dec_file.close()
@@ -541,6 +541,19 @@ def uninstall_extension(package_name_prefix, log_progress=None):
         if package['name'].startswith(package_name_prefix):
             task_id = create_uninstall_task(package['packageName'])
             query_task_until_finished(task_id, log_progress)
+
+
+def wait_for_dns_resolution(fqdn, timeout=30):
+    """Wait for DNS to resolve a required FQDN"""
+    start = time.time()
+    end = start + timeout
+    while time.time() < end:
+        try:
+            socket.gethostbyname(fqdn)
+            return True
+        except socket.error:
+            time.sleep(1)
+    return False
 
 
 def download_extension(extension_url):
