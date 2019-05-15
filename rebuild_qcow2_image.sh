@@ -155,7 +155,7 @@ function main() {
     echo "mounting $dst_image_file base image"
     mount_dst_image_file $dst_image_file
     if [ $? -ne 0 ]; then exit 1; fi
-    echo "finding TMOS volume groups withing base image"
+    echo "finding TMOS volume groups within base image"
     validate_volume_group
     if [ $? -ne 0 ]; then exit 1; fi
     echo "patching cloud-init resources"
