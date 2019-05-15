@@ -165,6 +165,8 @@ uploading patched OpenStack_BIGIP-14.1.0.1-0.0.7.ALL_1SLOT.qcow2 to OpenStack
 removing patched image file from local disk
 ```
 
+# Using the cloud-init Modules #
+
 The modules all include an `enabled` attribute which must be set to `true` for any onboard configuration to take place. For the most part these modules are mutually exclusive from each other, meaning you should only use the one that fits your deployment environment.
 
 ## tmos_static_mgmt ##
