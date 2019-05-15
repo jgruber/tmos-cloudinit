@@ -17,9 +17,11 @@ The cloudinit modules included in this repository need to be file-injected into 
 
 ## Build On Ubuntu OpenStack Instance ##
 
-Start an Ubuntu server 18.04 LTS OpenStack cloud instance. Make sure the cloud instance can route traffic requests to your OpenStack cloud Glance services. 
+This repository comes with a simple `bash` script to patch OpenStack qcow2 contained images. In the future, F5 intends to release an image bakery tools which will formalize how to patch TMOS VE images for all supported container types.
 
-Most of these functions require root level access within your virtual machine. You can open a root login session from `sudo` with `sudo -l`.
+To build a host which can run the simple OpenStack image build script, start an Ubuntu server 18.04 LTS OpenStack cloud instance. Make sure the cloud instance can route traffic requests to your OpenStack cloud Glance services. The script will upload your patched images to your OpenStack cloud. 
+
+Most of the functions performed in the patch script require root level access within your virtual machine. You can open a root login session from `sudo` with `sudo -l`. Simply terminate the VM instance when you are finished patching your images.
 
 Install require packages.
 
