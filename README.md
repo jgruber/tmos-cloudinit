@@ -15,7 +15,7 @@ In an attempt to standardize these efforsts, F5 launched a set of declarative `i
 
 The cloudinit modules included in this repository need to be file-injected into standard TMOS images before they can be used.
 
-## Build On Ubuntu OpenStack Instance ##
+## Patching TMOS VE Images Using an Ubuntu OpenStack Instance ##
 
 This repository comes with a simple `bash` script to patch OpenStack qcow2 contained images. In the future, F5 intends to release an image bakery tools which will formalize how to patch TMOS VE images for all supported container types.
 
