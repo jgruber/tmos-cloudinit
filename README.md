@@ -17,17 +17,21 @@ The cloudinit modules included in this repository need to be file-injected into 
 
 ## Build On Ubuntu OpenStack Instance ##
 
-Start an Ubuntu server 18.04 LTS OpenStack cloud instance. Make sure the cloud instance can route traffic requests to your OpenStack cloud Glance services. Install require packages.
+Start an Ubuntu server 18.04 LTS OpenStack cloud instance. Make sure the cloud instance can route traffic requests to your OpenStack cloud Glance services. 
+
+Most of these functions require root level access within your virtual machine. You can open a root login session from `sudo` with `sudo -l`.
+
+Install require packages.
 
 ```
 root@tmosimagebuilder:~# apt update
 root@tmosimagebuilder:~# apt install qemu-utils python-openstackclient git
-root@tmosimagebuilder:~# git clone https://github.com/jgruber/tmos-cloudinit.git
 ```
 
 Download this repository
 
 ```
+root@tmosimagebuilder:~# git clone https://github.com/jgruber/tmos-cloudinit.git
 Cloning into 'tmos-cloudinit'...
 remote: Enumerating objects: 122, done.
 remote: Counting objects: 100% (122/122), done.
@@ -39,7 +43,7 @@ root@tmosimagebuilder:~# cd tmos-cloudinit/
 root@tmosimagebuilder:~/tmos-cloudinit# 
 ```
 
-Download stock TMOS images from downloads.f5.com to the virtual machine. 
+Download predownloaded stock TMOS images from downloads.f5.com to the virtual machine. 
 
 ```
 root@tmosimagebuilder:~/tmos-cloudinit# mkdir TMOSImages
