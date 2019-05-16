@@ -17,7 +17,7 @@ function init() {
     pvscan_out=$(pvscan|grep 'No matching'|wc -l)
     if [ $pvscan_out -ne "1" ]; then
         echo "volumes still attached from last image build.. please fix"
-	exit 1
+	    exit 1
     fi
 }
 
@@ -26,7 +26,7 @@ function cp_src_to_dst() {
     cp $1 $2
     if [ $? -ne 0 ]; then
         echo "could not copy $1 to $2"
-	exit 1
+	    exit 1
     fi
 }
 
