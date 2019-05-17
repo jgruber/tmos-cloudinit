@@ -93,6 +93,21 @@ function validate_volume_group() {
 }
 
 
+function md5_check_copy() {
+    echo "copying $1 $2"
+    src_md5=$(md5sum "$1" | cut -d' ' -f1)
+    cp $1 $2
+    dest_md5=$(md5sum "$2" | cut -d' ' -f1)
+    echo "src md5  $src_md5"
+    echo "dest md5 $dest_md5"
+    if [[ "$src_md5" == *$dest_md5* ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
 function cp_cloudinit_parts() {
     mount_point='/tmp/bigip_usr'
     mkdir -p $mount_point
@@ -119,8 +134,13 @@ function cp_icontrollx_rpms() {
     mount "${vg_dev}"/set.1._config $mount_point
     mkdir -p $mount_point/icontrollx_installs
     for rpm_file in $icontrollx_rpm_injection_path/*.rpm; do
-	echo "injecting $rpm_file"
-        cp $rpm_file $mount_point/icontrollx_installs/
+        base_file=$(basename $rpm_file)
+	echo "injecting $base_file"
+        md5_check_copy $rpm_file $mount_point/icontrollx_installs/$base_file
+        if [ $? -ne 0 ]; then
+            umount $mount_point
+	    return 1
+        fi
     done
     umount $mount_point
 }
