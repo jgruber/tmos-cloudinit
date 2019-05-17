@@ -596,12 +596,13 @@ def install_extensions(log_progress):
                     install_task_id, log_progress)
             if rpm_installed:
                 if log_progress:
-                    log_progress('icontrol LX rpm %s installed' % rpm)
+                    log_progress('icontrol LX rpm %s installed.. restnoded will restart' % rpm)
+                time.sleep(5)
             else:
                 if log_progress:
                     log_progress(
                         'icontrol LX rpm %s did not install properly' % rpm)
-    wait_for_rest_worker('/mgmt/shared/echo-js')
+            wait_for_icontrollx()
 
 
 def clean():
