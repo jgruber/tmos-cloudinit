@@ -775,7 +775,7 @@ def phone_home(phone_home_url=None, do_enabled=False,
                 post_data['management'] = get_mgmt_cidr()
                 post_data['do_enabled'] = do_enabled
                 post_data['as3_enabled'] = as3_enabled
-                post_data['installed_extensions'] = install_extensions
+                post_data['installed_extensions'] = installed_extensions
                 post_data['status'] = status
                 post_json = json.dumps(post_data)
                 LOG.debug('POST %s - %s', phone_home_url, post_json)
