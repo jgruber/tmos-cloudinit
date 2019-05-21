@@ -519,12 +519,12 @@ The phone_home_url must take a `POST` reqeust. The `POST` body will be a JSON ob
 
 ```
 {
-	"id": "a67d1edb-0a4a-4101-afd1-2fbf04713cfa",
+  "id": "a67d1edb-0a4a-4101-afd1-2fbf04713cfa",
   "version": "14.1.0.1-0.0.7.0",
   "management": "192.168.245.119/24",
-	"installed_extensions": ["f5-service-discovery", "f5-declarative-onboarding", "f5-appsvcs"],
-	"as3_enabled": true,
-	"do_enabled": true,
+  "installed_extensions": ["f5-service-discovery", "f5-declarative-onboarding", "f5-appsvcs"],
+  "as3_enabled": true,
+  "do_enabled": true,
   "status": "COMPLETE"
 }
 ```
