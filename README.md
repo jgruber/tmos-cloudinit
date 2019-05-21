@@ -169,9 +169,13 @@ removing patched image file from local disk
 
 The modules all include an `enabled` attribute which must be set to `true` for any onboard configuration to take place. For the most part these modules are mutually exclusive from each other, meaning you should only use the one that fits your deployment environment.
 
+All modules log to the common `/config/cloud/f5-cloudinit.log` log file. 
+
 ## tmos_static_mgmt ##
 
 This cloudinit module extents TMOS to allow for static address assignment provided through cloudinit userdata.
+
+This cloudinit module writes and executes onboarding scripts in the `/config/cloud/tmos_static_mgmt` directory.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
@@ -211,6 +215,13 @@ tmos_static_mgmt:
 This cloudinit module requries the use of a ConfigDrive data source and OpenStack file formatted meta_data.json and network_data.json metadata files. This module extents TMOS functionality to include static provisioning off all interfaces (manaement and TMM) via either network metadata or the use of DHCPv4. This interface includes the ability to augment the configuration data retrieved via metadata and DHCP with additional f5-declarative-onboarding and f5-appsvc-3 declarations. Any supplied f5-declarative-onboarding declarations will overwrite or be merged with configuration declarations defined via metadata resource resolution. This modules support both 1NIC and nNIC deployments.
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
+
+This cloudinit module writes and executes onboarding scripts in the `/config/cloud/openstack` directory.
+
+This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
+
+This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/config/cloud/f5-appsrvs-3` directory.
+
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
@@ -287,6 +298,12 @@ This cloudinit module resolves configuration data for all interfaces (management
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
+This cloudinit module writes and executes onboarding scripts in the `/config/cloud/tmos_dhcpv4_tmm` directory.
+
+This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
+
+This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/config/cloud/f5-appsrvs-3` directory.
+
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
 | enabled              | false      | Activates ths module|
@@ -350,8 +367,11 @@ This module assumes the management interface provisioning completes via the defa
 
 ### Warning: DHCPv6 does not include interface-mtu support, meaning your access to your management interface might not be reliable. IPv6 requires the mgmt interface be set to a minumum of 1280 bytes, but SDN tunnel types might limit it to below the standard 1500 bytes. ###
 
-
 The declarations must be coherent with the deployment environment. As an example, the f5-declarative-onboarding declaration would need to include the `internal` VLAN and the `self_1nic` SelfIP classes to properly declare a 1NIC deployment.
+
+This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
+
+This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/config/cloud/f5-appsrvs-3` directory.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
