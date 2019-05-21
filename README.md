@@ -515,7 +515,7 @@ tmos_declared:
   phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
 ```
 
-The phone_home_url must take a `POST` reqeust. The `POST` body will be a JSON object with the following format:
+The `phone_home_url` must take a `POST` reqeust. The `POST` body will be a JSON object with the following format:
 
 ```
 {
