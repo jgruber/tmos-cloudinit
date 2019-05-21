@@ -184,8 +184,10 @@ This cloudinit module writes and executes onboarding scripts in the `/config/clo
 | netmask | none | The management IP netmask, only required if ip is not CIDR |
 | gw | none | The management default gateway IP address |
 | mtu | 1500 | The management link MTU |
+| icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
+| phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
 
 
 ### usage ###
@@ -198,6 +200,10 @@ tmos_static_mgmt:
   netmask: 255.255.255.0
   gw: 192.168.245.1
   mtu: 1450
+  icontrollx_package_urls:
+    - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
+    - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
+    - https://github.com/F5Networks/f5-telemetry-streaming/raw/master/dist/f5-telemetry-1.2.0-1.noarch.rpm
   post_onboard_enabled: true
   post_onboard_commands:
     - tmsh modify sys db ui.advisory.color { value orange }
@@ -209,6 +215,7 @@ tmos_static_mgmt:
     - tmsh modify sys provision asm level minimum
     - /usr/local/bin/SOAPLicenseClient --basekey KALCE-AHJBL-RFJSD-GGNFG-MFJCDYX
     - /usr/bin/curl https://webhook.site/d52ba6d9-653d-4817-b34e-4f927026a639
+  phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
 ```
 
 ## tmos_configdrive_openstack ##
@@ -220,7 +227,7 @@ This cloudinit module writes and executes onboarding scripts in the `/config/clo
 
 This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
 
-This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/config/cloud/f5-appsrvs-3` directory.
+This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/config/cloud/f5-appsvcs-extension` directory.
 
 
 | Module Attribute | Default | Description|
@@ -234,16 +241,17 @@ This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/con
 | icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | do_enable | true | Enables attempt to create a f5-declarative-onboarding declaration from discovered resources. If enabled, an asynchronous attempt to declare resouces via f5-declarative-onboarding will be made. If the initial request fails, non-declarative onboarding will resumse |
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
-| as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-3|
-| as3_declaration | none | The f5-appsvcs-3 declaration to declare if enabled |
+| as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-extension|
+| as3_declaration | none | The f5-appsvcs-extension declaration to declare if enabled |
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
+| phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
 
-#### Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
+#### Warning: f5-declarative-onboarding and f5-appsvcs-extension do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-extension declarations 
 
 SSH keys found in the OpenStack meta_data.json file will also be injected as authorized_keys for the root account.
 
-If f5-declarative-onboarding is disbaled, done by setting `do_eabled` to false, the device onboarding configuration will contine as described in the OpenStack meta_data.json and network_data.json files. f5-appsrvs-3 declarations can be applied with or without f5-declarative-onboarding being enabled.
+If f5-declarative-onboarding is disbaled, done by setting `do_eabled` to false, the device onboarding configuration will contine as described in the OpenStack meta_data.json and network_data.json files. f5-appsvcs-extension declarations can be applied with or without f5-declarative-onboarding being enabled.
 
 ```
 #cloud-config
@@ -280,7 +288,7 @@ tmos_configdrive_openstack:
       class: ADC
       schemaVersion: 3.0.0
       ...
-
+  phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
 ```
 
 In addition to the delcared elements, this module also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
@@ -302,7 +310,7 @@ This cloudinit module writes and executes onboarding scripts in the `/config/clo
 
 This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
 
-This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/config/cloud/f5-appsrvs-3` directory.
+This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/config/cloud/f5-appsvcs-extension` directory.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
@@ -315,14 +323,15 @@ This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/con
 | icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | do_enable | true | Enables attempt to create a f5-declarative-onboarding declaration from discovered resources. If enabled, an asynchronous attempt to declare resouces via f5-declarative-onboarding will be made. If the initial request fails, non-declarative onboarding will resumse |
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
-| as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-3|
-| as3_declaration | none | The f5-appsvcs-3 declaration to declare if enabled |
+| as3_enabled | true | Enables attempt to declare an application services configuration with f5-appsvcs-extension|
+| as3_declaration | none | The f5-appsvcs-extension declaration to declare if enabled |
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
+| phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
 
-#### Warning: f5-declarative-onboarding and f5-appsvcs-3 do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-3 declarations 
+#### Warning: f5-declarative-onboarding and f5-appsvcs-extension do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-extension declarations 
 
-If f5-declarative-onboarding is disbaled, done by setting `do_eabled` to false, the device onboarding configuration will contine as described in the OpenStack meta_data.json and network_data.json files. f5-appsrvs-3 declarations can be applied with or without f5-declarative-onboarding being enabled.
+If f5-declarative-onboarding is disbaled, done by setting `do_eabled` to false, the device onboarding configuration will contine as described in the OpenStack meta_data.json and network_data.json files. f5-appsvcs-extension declarations can be applied with or without f5-declarative-onboarding being enabled.
 
 ```
 #cloud-config
@@ -350,6 +359,7 @@ tmos_dhcp_tmm:
     - tmsh modify sys provision asm level minimum
     - /usr/local/bin/SOAPLicenseClient --basekey KALCE-AHJBL-RFJSD-GGNFG-MFJCDYX
     - /usr/bin/curl https://webhook.site/d52ba6d9-653d-4817-b34e-4f927026a639
+  phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
 ```
 
 In addition to the delcared elements, this module also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
@@ -363,7 +373,7 @@ ssh_authorized_keys:
 
 ## tmos_declared ##
 
-This module assumes the management interface provisioning completes via the default method (DHCPv4 or DHCPv6), but that all other onboard configurations should be handled through f5-declarative-onboarding and f5-appsvcs-3 declarations. 
+This module assumes the management interface provisioning completes via the default method (DHCPv4 or DHCPv6), but that all other onboard configurations should be handled through f5-declarative-onboarding and f5-appsvcs-extension declarations. 
 
 ### Warning: DHCPv6 does not include interface-mtu support, meaning your access to your management interface might not be reliable. IPv6 requires the mgmt interface be set to a minumum of 1280 bytes, but SDN tunnel types might limit it to below the standard 1500 bytes. ###
 
@@ -371,14 +381,15 @@ The declarations must be coherent with the deployment environment. As an example
 
 This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
 
-This cloudinit module optionally composes f5-appsrvs-3 declarations in the `/config/cloud/f5-appsrvs-3` directory.
+This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/config/cloud/f5-appsvcs-extension` directory.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
 | enabled              | false      | Activates ths module|
 | icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
-| as3_declaration | none | The f5-appsvcs-3 declaration to declare if enabled |
+| as3_declaration | none | The f5-appsvcs-extension declaration to declare if enabled |
+| phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
 
 ```
 #cloud-config
@@ -503,6 +514,21 @@ tmos_declared:
           class: WAF_Policy
           url: https://raw.githubusercontent.com/f5devcentral/f5-asm-policy-template-v13/master/owasp_ready_template/owasp-no-autotune.xml
           ignoreChanges: true
+  phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
+```
+
+The phone_home_url must take a `POST` reqeust. The `POST` body will be a JSON object with the following format:
+
+```
+{
+	"id": "a67d1edb-0a4a-4101-afd1-2fbf04713cfa",
+  "version": "14.1.0.1-0.0.7.0",
+  "management": "192.168.245.119/24",
+	"installed_extensions": ["f5-service-discovery", "f5-declarative-onboarding", "f5-appsvcs"],
+	"as3_enabled": true,
+	"do_enabled": true,
+  "status": "COMPLETE"
+}
 ```
 
 In addition to the delcared elements, this module also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.

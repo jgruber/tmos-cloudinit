@@ -23,6 +23,7 @@ import os
 import re
 import socket
 import subprocess
+import urlparse
 import time
 import requests
 
@@ -42,7 +43,7 @@ OUT_DIR = '/config/cloud'
 MGMT_DHCP_LEASE_FILE = '/var/lib/dhclient/dhclient.leases'
 
 DO_DECLARATION_DIR = OUT_DIR + '/f5-declarative-onboarding'
-AS3_DECLARATION_DIR = OUT_DIR + '/f5-appsrvs-3'
+AS3_DECLARATION_DIR = OUT_DIR + '/f5-appsvcs-extension'
 
 DHCP_LEASE_DIR = OUT_DIR + '/dhclient'
 
@@ -121,12 +122,27 @@ def is_v4(address):
 def is_mgmt_ip():
     """Test if the mgmt interface has an IP address assigned"""
     mgmt_ip = subprocess.Popen(
-        "ip addr show mgmt | grep '^\\s*inet '| wc -l",
+        "ip addr show mgmt | grep '^\\s*inet '| grep -v 169.254 | wc -l",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    if int(mgmt_ip) == 1:
+        return True
+    mgmt_ip = subprocess.Popen(
+        "ip addr show mgmt | grep '^\\s*inet6 '| grep -v fe80 | wc -l",
         stdout=subprocess.PIPE, shell=True
     ).communicate()[0].replace('\n', '')
     if int(mgmt_ip) == 1:
         return True
     return False
+
+
+def get_mgmt_cidr():
+    """Return the managment interface IP address in CIDR notation from tmsh"""
+    mgmt_cidr = subprocess.Popen(
+        "tmsh list sys management-ip one-line | cut -d' ' -f3",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    return mgmt_cidr
 
 
 def is_mgmt_default_gateway():
@@ -138,6 +154,24 @@ def is_mgmt_default_gateway():
     if int(mgmt_gw) == 1:
         return True
     return False
+
+
+def get_tmos_version():
+    """Get the TMOS version string"""
+    version = subprocess.Popen(
+        "cat /VERSION | grep -i sequence | cut -d':' -f2 | tr '[A-Z]' '[a-z]' | tr -d '[:space:]'",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    return version
+
+
+def get_dmi_uuid():
+    """Get the system UUID from DMI"""
+    uuid = subprocess.Popen(
+        "dmidecode | grep -i UUID | cut -d':' -f2 | tr '[A-Z]' '[a-z]' | tr -d '[:space:]'",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    return uuid
 
 
 def wait_for_mgmt_dhcp(timeout=None):
@@ -516,13 +550,13 @@ def get_do_declaration():
 
 
 def as3_declaration_dir_exists():
-    """Ensures f5-appsvcs-3 declaration copy directory exists"""
+    """Ensures f5-appsvcs-extension declaration copy directory exists"""
     if not os.path.isdir(AS3_DECLARATION_DIR):
         os.makedirs(AS3_DECLARATION_DIR)
 
 
 def persist_as3_declaration(declaration):
-    """Write the f5-appsvcs-3 declaration to file"""
+    """Write the f5-appsvcs-extension declaration to file"""
     as3_declaration_dir_exists()
     if os.path.isfile(AS3_DECLARATION_FILE):
         util.del_file(AS3_DECLARATION_FILE)
@@ -530,25 +564,26 @@ def persist_as3_declaration(declaration):
 
 
 def as3_declare():
-    """Makes an f5-appsvcs-3 declaration from the supplied metadata"""
+    """Makes an f5-appsvcs-extension declaration from the supplied metadata"""
     if is_rest_worker('/mgmt/shared/appsvcs/declare') and os.path.isfile(AS3_DECLARATION_FILE):
         as3df = open(AS3_DECLARATION_FILE, 'r')
         declaration = as3df.read()
         as3df.close()
         json.loads(declaration)
         d_url = 'http://localhost:8100/mgmt/shared/appsvcs/declare'
-        LOG.debug('POST f5-appsvcs-3 declaration')
+        LOG.debug('POST f5-appsvcs-extension declaration')
         response = requests.post(d_url, auth=('admin', ''), data=declaration)
         # initial request
         if response.status_code < 400:
             return True
-        LOG.error('f5-appsvcs-3 declaration failed %s - %s', response.status_code, response.text)
-    LOG.error('f5-appsvcs-3 worker not installed or declaration missing')
+        LOG.error('f5-appsvcs-extension declaration failed %s - %s',
+                  response.status_code, response.text)
+    LOG.error('f5-appsvcs-extension worker not installed or declaration missing')
     return False
 
 
 def get_as3_declaration():
-    """Gets the existing f5-appsvcs-3 declaration"""
+    """Gets the existing f5-appsvcs-extension declaration"""
     return requests.get(
         'http://localhost:8100/mgmt/shared/appsvcs/declare',
         auth=('admin', '')
@@ -665,32 +700,44 @@ def wait_for_dns_resolution(fqdn, timeout=30):
 
 def download_extension(extension_url):
     """Downloads an iControl LX RPM package prior to installation processing"""
-    tmp_file_name = '/tmp/download_file.part'
-    dest_file = os.path.basename(extension_url)
-    if os.path.isfile(tmp_file_name):
-        util.del_file(tmp_file_name)
-    LOG.debug('GET %s', extension_url)
-    resp = requests.get(extension_url, stream=True, allow_redirects=True)
-    resp.raise_for_status()
-    cont_disp = resp.headers.get('content-disposition')
-    if cont_disp:
-        cont_disp_fn = re.findall('filename=(.+)', cont_disp)
-        if cont_disp_fn > 0:
-            dest_file = cont_disp_fn[0]
-    with open(tmp_file_name, 'wb') as out_file:
-        for chunk in resp.iter_content(chunk_size=8192):
-            if chunk:
-                out_file.write(chunk)
-    if os.path.isfile(tmp_file_name):
-        dest_file = RPM_INSTALL_DIR + '/' + dest_file
-        util.copy(tmp_file_name, dest_file)
-        return True
-    LOG.error('could not copy %s to %s', extension_url, dest_file)
-    return False
+    if not os.path.isdir(RPM_INSTALL_DIR):
+        os.makedirs(RPM_INSTALL_DIR)
+    try:
+        parsed_url = urlparse.urlparse(extension_url)
+        fqdn = parsed_url.netloc
+        if wait_for_dns_resolution(fqdn, 120):
+            tmp_file_name = '/tmp/download_file.part'
+            dest_file = os.path.basename(extension_url)
+            if os.path.isfile(tmp_file_name):
+                util.del_file(tmp_file_name)
+            LOG.debug('GET %s', extension_url)
+            resp = requests.get(extension_url, stream=True, allow_redirects=True)
+            resp.raise_for_status()
+            cont_disp = resp.headers.get('content-disposition')
+            if cont_disp:
+                cont_disp_fn = re.findall('filename=(.+)', cont_disp)
+                if cont_disp_fn > 0:
+                    dest_file = cont_disp_fn[0]
+            with open(tmp_file_name, 'wb') as out_file:
+                for chunk in resp.iter_content(chunk_size=8192):
+                    if chunk:
+                        out_file.write(chunk)
+            if os.path.isfile(tmp_file_name):
+                dest_file = RPM_INSTALL_DIR + '/' + dest_file
+                util.copy(tmp_file_name, dest_file)
+                return True
+            LOG.error('could not copy %s to %s', extension_url, dest_file)
+        return False
+    except Exception as err:
+        LOG.error("could not download: %s - %s", extension_url, err)
+        return False
 
 
 def install_extensions():
     """Install iControl LX package RPMs found in the RPM_INSTALL_DIR directory"""
+    if not os.path.isdir(RPM_INSTALL_DIR):
+        LOG.warn('No iControl LX extensions found to install')
+        return False
     for rpm in os.listdir(RPM_INSTALL_DIR):
         if wait_for_mcpd() and wait_for_rest_worker('/mgmt/shared/iapp/package-management-tasks/'):
             LOG.info('installing icontrol LX rpm: %s', rpm)
@@ -706,6 +753,38 @@ def install_extensions():
             else:
                 LOG.error('icontrol LX rpm %s did not install properly', rpm)
             wait_for_icontrollx()
+    return True
+
+
+def phone_home(phone_home_url=None, do_enabled=False,
+               as3_enabled=False, status='ERROR'):
+    """Issues a Phone Home web POST request with collected onboard data"""
+    if phone_home_url:
+        try:
+            parsed_url = urlparse.urlparse(phone_home_url)
+            fqdn = parsed_url.netloc
+            if wait_for_dns_resolution(fqdn, 120):
+                wait_for_icontrol(timeout=120)
+                installed_extensions = []
+                packages = get_installed_extensions()
+                for package in packages:
+                    installed_extensions.append(package['name'])
+                post_data = {}
+                post_data['id'] = get_dmi_uuid()
+                post_data['version'] = get_tmos_version()
+                post_data['management'] = get_mgmt_cidr()
+                post_data['do_enabled'] = do_enabled
+                post_data['as3_enabled'] = as3_enabled
+                post_data['installed_extensions'] = install_extensions
+                post_data['status'] = status
+                post_json = json.dumps(post_data)
+                LOG.debug('POST %s - %s', phone_home_url, post_json)
+                resp = requests.post(phone_home_url, data=post_json)
+                resp.raise_for_status()
+                return True
+        except Exception as err:
+            LOG.error("could not phone home: %s - %s", phone_home_url, err)
+    return False
 
 
 def clean():
