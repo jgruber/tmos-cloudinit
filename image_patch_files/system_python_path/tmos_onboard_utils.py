@@ -28,11 +28,18 @@ import requests
 
 from cloudinit import util
 from cloudinit import ssh_util
-from cloudinit import log as logging
 
-LOG = logging.getLogger(__name__)
+LOG_FILE = '/config/cloud/f5-cloudinit.log'
+
+MGMT_DHCP_TIMEOUT = 600
+MCPD_TIMEOUT = 600
+ICONTROL_TIMEOUT = 600
+ICONTROLLX_TIMEOUT = 600
+URL_TIMEOUT = 600
 
 OUT_DIR = '/config/cloud'
+
+MGMT_DHCP_LEASE_FILE = '/var/lib/dhclient/dhclient.leases'
 
 DO_DECLARATION_DIR = OUT_DIR + '/f5-declarative-onboarding'
 AS3_DECLARATION_DIR = OUT_DIR + '/f5-appsrvs-3'
@@ -44,7 +51,6 @@ RPM_INSTALL_DIR = '/config/icontrollx_installs'
 DO_DECLARATION_FILE = DO_DECLARATION_DIR + '/do_declaration.json'
 AS3_DECLARATION_FILE = AS3_DECLARATION_DIR + '/as3_declaration.json'
 
-PROGRESS_FILE = OUT_DIR + '/cloudinit.log'
 RPM_INSTALL_PROGRESS_FLAG_FILE_PREFIX = OUT_DIR + 'ICONTROL_LX_INSTALL_'
 
 SSH_KEY_FILE = '/root/.ssh/authorized_keys'
@@ -55,6 +61,25 @@ DEFAULT_CONFIGSYNC_INTERFACE = '1.1'
 
 REMOVE_DHCP_LEASE_FILES = False
 
+
+def touch_logfile(logfile, times=None):
+    """Touch log file is needed"""
+    if not os.path.isfile(logfile):
+        if not os.path.exists(os.path.dirname(logfile)):
+            os.makedirs(os.path.dirname(logfile))
+        with open(logfile, 'a'):
+            os.utime(logfile, times)
+
+
+touch_logfile(LOG_FILE)
+
+LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.DEBUG)
+FORMATTER = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+LOGFILE = logging.FileHandler(LOG_FILE)
+LOGFILE.setLevel(logging.DEBUG)
+LOGFILE.setFormatter(FORMATTER)
+LOG.addHandler(LOGFILE)
 
 # inject discovered SSH keys, we don't use the ssh_keys cloud-init module
 # because it uses SELinuxGuard, which we don't know will always be
@@ -93,6 +118,40 @@ def is_v4(address):
         return False
 
 
+def is_mgmt_ip():
+    """Test if the mgmt interface has an IP address assigned"""
+    mgmt_ip = subprocess.Popen(
+        "ip addr show mgmt | grep '^\\s*inet '| wc -l",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    if int(mgmt_ip) == 1:
+        return True
+    return False
+
+
+def is_mgmt_default_gateway():
+    """Test if the mgmt subnet has a default gateway"""
+    mgmt_gw = subprocess.Popen(
+        "route -n | grep '^0.0.0.0'| grep mgmt | wc -l",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    if int(mgmt_gw) == 1:
+        return True
+    return False
+
+
+def wait_for_mgmt_dhcp(timeout=None):
+    """Blocks until the mgmt DHCP lease file is present"""
+    if not timeout:
+        timeout = MGMT_DHCP_TIMEOUT
+    end_time = time.time() + timeout
+    while (end_time - time.time()) > 0:
+        if os.path.isfile(MGMT_DHCP_LEASE_FILE):
+            return True
+        time.sleep(1)
+    return False
+
+
 def is_mcpd():
     """Determines if the TMOS master control process is running"""
     running = subprocess.Popen(
@@ -104,14 +163,16 @@ def is_mcpd():
     return False
 
 
-def wait_for_mcpd():
+def wait_for_mcpd(timeout=None):
     """Blocks until the TMOS master control process is running"""
-    waiting_on_mcpd = 120
-    while waiting_on_mcpd > 0:
-        waiting_on_mcpd -= 1
+    if not timeout:
+        timeout = MCPD_TIMEOUT
+    end_time = time.time() + timeout
+    while (end_time - time.time()) > 0:
         if is_mcpd():
             return True
-        time.sleep(2)
+        time.sleep(1)
+    LOG.error('mcpd did not reach tunning state in %s seconds', timeout)
     return False
 
 
@@ -158,14 +219,16 @@ def is_icontrol():
         return False
 
 
-def wait_for_icontrol():
+def wait_for_icontrol(timeout=None):
     """Blocks until the TMOS control plane iControl REST service is running"""
-    waiting_on_icontrol = 120
-    while waiting_on_icontrol > 0:
-        waiting_on_icontrol -= 1
+    if not timeout:
+        timeout = ICONTROL_TIMEOUT
+    end_time = time.time() + timeout
+    while (end_time - time.time()) > 0:
         if is_icontrol():
             return True
-        time.sleep(2)
+        time.sleep(1)
+    LOG.error('iControl REST services could not be reached after %s seconds', timeout)
     return False
 
 
@@ -180,18 +243,21 @@ def is_rest_worker(workerpath):
         return False
 
 
-def wait_for_rest_worker(workerpath):
+def wait_for_rest_worker(workerpath, timeout=None):
     """Blocks until the TMOS control plane iControl REST worker path exists"""
     task_url = 'http://localhost:8100' + workerpath
-    waiting_on_url = 120
-    while waiting_on_url > 0:
-        waiting_on_url -= 1
+    if not timeout:
+        timeout = ICONTROL_TIMEOUT
+    end_time = time.time() + timeout
+    while (end_time - time.time()) > 0:
         try:
             response = requests.get(task_url, auth=('admin', ''))
             if response.status_code < 400:
                 return True
         except Exception:
             return False
+        time.sleep(1)
+    LOG.error('iControl REST worker %s could not be reached after %s seconds', workerpath, timeout)
     return False
 
 
@@ -209,14 +275,44 @@ def is_icontrollx():
         return False
 
 
-def wait_for_icontrollx():
+def wait_for_icontrollx(timeout=None):
     """Blocks until the TMOS control plane iControl Node service is running"""
-    waiting_on_icontrol = 120
-    while waiting_on_icontrol > 0:
-        waiting_on_icontrol -= 1
+    if not timeout:
+        timeout = ICONTROLLX_TIMEOUT
+    end_time = time.time() + timeout
+    while (end_time - time.time()) > 0:
         if is_icontrollx():
             return True
-        time.sleep(2)
+        time.sleep(1)
+    LOG.error('iControl LX services could not be reached after %s seconds', timeout)
+    return False
+
+
+def is_url(monitor_url, status_code=None):
+    """Determins if the URL is reachable and optionally returns a status code"""
+    try:
+        response = requests.get(monitor_url)
+        LOG.debug('URL %s status %s', monitor_url, response.status_code)
+        if status_code:
+            if response.status_code == status_code:
+                return True
+        return True
+    except Exception as ex:
+        LOG.error('URL %s exception %s', monitor_url, ex)
+        return False
+    return False
+
+
+def wait_for_url(monitor_url, status_code=None, timeout=None):
+    """Blocks until the URL is availale"""
+    if not timeout:
+        timeout = URL_TIMEOUT
+    end_time = time.time() + timeout
+    while (end_time - time.time()) > 0:
+        if is_url(monitor_url, status_code):
+            return True
+        time.sleep(1)
+    LOG.error('URL %s could not be reached after %s seconds', monitor_url, timeout)
     return False
 
 
@@ -391,16 +487,23 @@ def persist_do_declaration(declaration, additional_declarations):
 
 def do_declare():
     """Makes a f5-declarative-onboarding declaration from the generated file"""
-    if is_rest_worker('/mgmt/shared/declarative-onboarding') and os.path.isfile(DO_DECLARATION_FILE):
+    if is_rest_worker('/mgmt/shared/declarative-onboarding') and \
+            os.path.isfile(DO_DECLARATION_FILE):
         dec_file = open(DO_DECLARATION_FILE, 'r')
         declaration = dec_file.read()
         dec_file.close()
         json.loads(declaration)
         dec_url = 'http://localhost:8100/mgmt/shared/declarative-onboarding'
+        LOG.debug('POST f5-declarative-onboarding declaration')
         response = requests.post(dec_url, auth=('admin', ''), data=declaration)
         # initial request
         if response.status_code < 400:
+            LOG.info('f5-declarative-onboarding declared successfully')
             return True
+        LOG.error('f5-declarative-onboarding declaration returned %s - %s',
+                  response.status_code, response.text)
+        return False
+    LOG.error('f5-declarative-onboarding worker not installed or declaration missing')
     return False
 
 
@@ -434,10 +537,13 @@ def as3_declare():
         as3df.close()
         json.loads(declaration)
         d_url = 'http://localhost:8100/mgmt/shared/appsvcs/declare'
+        LOG.debug('POST f5-appsvcs-3 declaration')
         response = requests.post(d_url, auth=('admin', ''), data=declaration)
         # initial request
         if response.status_code < 400:
             return True
+        LOG.error('f5-appsvcs-3 declaration failed %s - %s', response.status_code, response.text)
+    LOG.error('f5-appsvcs-3 worker not installed or declaration missing')
     return False
 
 
@@ -485,29 +591,28 @@ def create_query_extensions_task():
     return False
 
 
-def get_task_status(task_id, log_progress=None):
+def get_task_status(task_id):
     """Queries the task status of an iControl LX task"""
     task_url = 'http://localhost:8100/mgmt/shared/iapp/package-management-tasks/' + task_id
     response = requests.get(task_url, auth=('admin', ''))
     if response.status_code < 400:
         response_json = response.json()
-        if log_progress:
-            log_progress('task %s returned status %s' %
-                         (task_id, response_json['status']))
+        LOG.debug('task %s returned status %s',
+                  task_id, response_json['status'])
         if response_json['status'] == 'FAILED':
-            if 'errorMessage' in response_json and log_progress:
-                log_progress('task %s failed: %s' %
-                             (task_id, response_json['errorMessage']))
+            if 'errorMessage' in response_json:
+                LOG.error('task %s failed: %s',
+                          task_id, response_json['errorMessage'])
         return response_json['status']
     return False
 
 
-def query_task_until_finished(task_id, log_progress=None):
+def query_task_until_finished(task_id):
     """Blocks until an iControl LX task finishes or fails"""
     max_attempts = 60
     while max_attempts > 0:
         max_attempts -= 1
-        status = get_task_status(task_id, log_progress)
+        status = get_task_status(task_id)
         if status and status == 'FINISHED':
             return True
         elif status == 'FAILED':
@@ -534,13 +639,13 @@ def get_installed_extensions():
     return return_package_task(task_id)
 
 
-def uninstall_extension(package_name_prefix, log_progress=None):
+def uninstall_extension(package_name_prefix):
     """Uninstalls an iControl LX extension"""
     packages = get_installed_extensions()
     for package in packages:
         if package['name'].startswith(package_name_prefix):
             task_id = create_uninstall_task(package['packageName'])
-            query_task_until_finished(task_id, log_progress)
+            query_task_until_finished(task_id)
 
 
 def wait_for_dns_resolution(fqdn, timeout=30):
@@ -552,7 +657,9 @@ def wait_for_dns_resolution(fqdn, timeout=30):
             socket.gethostbyname(fqdn)
             return True
         except socket.error:
+            LOG.error('FQDN %s could not be resolved', fqdn)
             time.sleep(1)
+    LOG.error('FQDN %s could not be resolved in %s seconds', fqdn, timeout)
     return False
 
 
@@ -562,6 +669,7 @@ def download_extension(extension_url):
     dest_file = os.path.basename(extension_url)
     if os.path.isfile(tmp_file_name):
         util.del_file(tmp_file_name)
+    LOG.debug('GET %s', extension_url)
     resp = requests.get(extension_url, stream=True, allow_redirects=True)
     resp.raise_for_status()
     cont_disp = resp.headers.get('content-disposition')
@@ -577,31 +685,26 @@ def download_extension(extension_url):
         dest_file = RPM_INSTALL_DIR + '/' + dest_file
         util.copy(tmp_file_name, dest_file)
         return True
+    LOG.error('could not copy %s to %s', extension_url, dest_file)
     return False
 
 
-def install_extensions(log_progress):
+def install_extensions():
     """Install iControl LX package RPMs found in the RPM_INSTALL_DIR directory"""
     for rpm in os.listdir(RPM_INSTALL_DIR):
         if wait_for_mcpd() and wait_for_rest_worker('/mgmt/shared/iapp/package-management-tasks/'):
-            if log_progress:
-                log_progress('installing icontrol LX rpm: ' + rpm)
+            LOG.info('installing icontrol LX rpm: %s', rpm)
             install_task_id = create_install_task(
                 RPM_INSTALL_DIR + '/' + rpm)
-            if log_progress:
-                log_progress('install task is: ' + install_task_id)
+            LOG.debug('install task is: %s', install_task_id)
             rpm_installed = False
             if install_task_id:
-                rpm_installed = query_task_until_finished(
-                    install_task_id, log_progress)
+                rpm_installed = query_task_until_finished(install_task_id)
             if rpm_installed:
-                if log_progress:
-                    log_progress('icontrol LX rpm %s installed.. restnoded will restart' % rpm)
+                LOG.debug('icontrol LX rpm %s installed.. restnoded will restart', rpm)
                 time.sleep(5)
             else:
-                if log_progress:
-                    log_progress(
-                        'icontrol LX rpm %s did not install properly' % rpm)
+                LOG.error('icontrol LX rpm %s did not install properly', rpm)
             wait_for_icontrollx()
 
 
