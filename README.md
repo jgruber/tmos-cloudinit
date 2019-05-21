@@ -363,31 +363,126 @@ The declarations must be coherent with the deployment environment. As an example
 ```
 #cloud-config
 tmos_declared:
-  enabled: True
+  enabled: true
   icontrollx_package_urls:
     - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
     - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
     - https://github.com/F5Networks/f5-telemetry-streaming/raw/master/dist/f5-telemetry-1.2.0-1.noarch.rpm
   do_declaration:
+    schemaVersion: 1.0.0
+    class: Device
+    async: true
+    label: Cloudinit Onboarding
     Common:
       class: Tenant
-      licenseKey:
-        class: License
-        licenseType: regKey
-        regKey: GJKDM-UJTJH-OJZVX-ZJPEG-XTJIAHI
       provisioningLevels:
         class: Provision
         ltm: nominal
-        asm: minimum
-      ...
+        asm: nominal
+      poolLicense:
+        class: License
+        licenseType: licensePool
+        bigIqHost: licensor.example.openstack.com
+        bigIqUsername: admin
+        bigIqPassword: admin
+        licensePool: BIGIPVEREGKEYS
+        reachable: true
+        bigIpUsername: admin
+        bigIpPassword: admin
+      dnsServers:
+        class: DNS
+        nameServers:
+          - 8.8.8.8
+        search:
+          - example.openstack.com
+      ntpServers:
+        class: NTP
+        servers:
+          - 0.pool.ntp.org
+          - 1.pool.ntp.org
+          - 2.pool.ntp.org
+      HA:
+        class: VLAN
+        mtu: 1450
+        interfaces:
+          - name: 1.1
+            tagged: false
+      HA-self:
+        class: SelfIp
+        address: 1.1.1.106/24
+        vlan: HA
+        allowService: all
+        trafficGroup: traffic-group-local-only
+      configsync:
+        class: ConfigSync
+        configsyncIp: /Common/HA-self/address
+      internal:
+        class: VLAN
+        mtu: 1450
+        interfaces:
+          - name: 1.2
+            tagged: false
+      internal-self:
+        class: SelfIp
+        address: 192.168.40.51/24
+        vlan: internal
+        allowService: default
+        trafficGroup: traffic-group-local-only
+      external:
+        class: VLAN
+        mtu: 1450
+        interfaces:
+          - name: 1.3
+            tagged: false
+      external-self:
+        class: SelfIp
+        address: 192.168.80.56/24
+        vlan: external
+        allowService: none
+        trafficGroup: traffic-group-local-only
+      default:
+        class: Route
+        gw: 192.168.80.1
+        network: default
+        mtu: 1500
+      dbvars:
+        class: DbVariables
+        ui.advisory.enabled: true
+        ui.advisory.color: orange
+        ui.advisory.text: This device is under centralized management.
   as3_declaration:
-    class: AS3
-    action: deploy
-    persist: true
-    declaration:
-      class: ADC
-      schemaVersion: 3.0.0
-      ...
+    class: ADC
+    schemaVersion: 3.0.0
+    label: ASM_VS1
+    remark: ASM_VS1
+    Sample_app_sec_01:
+      class: Tenant
+      HTTP_Service:
+        class: Application
+        template: http
+        serviceMain:
+          class: Service_HTTP
+          virtualAddresses:
+            - 192.168.80.51
+          snat: auto
+          pool: Pool1
+          policyWAF:
+            use: WAFPolicy
+        Pool1:
+          class: Pool
+          monitors:
+            - http
+          members:
+            - servicePort: 8001
+              serverAddresses:
+                - 10.10.10.143
+            - servicePort: 8002
+              serverAddresses:
+                - 10.10.10.144
+        WAFPolicy:
+          class: WAF_Policy
+          url: https://raw.githubusercontent.com/f5devcentral/f5-asm-policy-template-v13/master/owasp_ready_template/owasp-no-autotune.xml
+          ignoreChanges: true
 ```
 
 In addition to the delcared elements, this module also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
