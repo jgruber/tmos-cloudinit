@@ -184,6 +184,7 @@ function main() {
     cp_icontrollx_rpms
     echo "closing patched volumes" 
     clean_up_volumes
+    # exit 1
     if [ $? -ne 0 ]; then exit 1; fi
     echo "uploading patched $dst_image_file to OpenStack"
     upload_image_to_glance $dst_image_file
