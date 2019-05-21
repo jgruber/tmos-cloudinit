@@ -214,7 +214,6 @@ tmos_static_mgmt:
     - tmsh modify sys provision ltm level minimum
     - tmsh modify sys provision asm level minimum
     - /usr/local/bin/SOAPLicenseClient --basekey KALCE-AHJBL-RFJSD-GGNFG-MFJCDYX
-    - /usr/bin/curl https://webhook.site/d52ba6d9-653d-4817-b34e-4f927026a639
   phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
 ```
 
@@ -358,7 +357,6 @@ tmos_dhcp_tmm:
     - tmsh modify sys provision ltm level minimum
     - tmsh modify sys provision asm level minimum
     - /usr/local/bin/SOAPLicenseClient --basekey KALCE-AHJBL-RFJSD-GGNFG-MFJCDYX
-    - /usr/bin/curl https://webhook.site/d52ba6d9-653d-4817-b34e-4f927026a639
   phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
 ```
 
