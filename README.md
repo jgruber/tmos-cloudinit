@@ -188,6 +188,7 @@ This cloudinit module writes and executes onboarding scripts in the `/config/clo
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
+| phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
 
 
 ### usage ###
@@ -245,6 +246,7 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
+| phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
 
 #### Warning: f5-declarative-onboarding and f5-appsvcs-extension do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-extension declarations 
 
@@ -327,6 +329,7 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
+| phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
 
 #### Warning: f5-declarative-onboarding and f5-appsvcs-extension do not support the use of route domains at this time. You should disable route domain support when attempting to use f5-declarative-onboarding and f5-appsvcs-extension declarations 
 
@@ -388,15 +391,16 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
 | as3_declaration | none | The f5-appsvcs-extension declaration to declare if enabled |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
+| phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
 
 ```
 #cloud-config
 tmos_declared:
   enabled: true
   icontrollx_package_urls:
-    - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
-    - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
-    - https://github.com/F5Networks/f5-telemetry-streaming/raw/master/dist/f5-telemetry-1.2.0-1.noarch.rpm
+    - "https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm"
+    - "https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm"
+    - "https://github.com/F5Networks/f5-telemetry-streaming/raw/master/dist/f5-telemetry-1.2.0-1.noarch.rpm"
   do_declaration:
     schemaVersion: 1.0.0
     class: Device
@@ -510,9 +514,10 @@ tmos_declared:
                 - 10.10.10.144
         WAFPolicy:
           class: WAF_Policy
-          url: https://raw.githubusercontent.com/f5devcentral/f5-asm-policy-template-v13/master/owasp_ready_template/owasp-no-autotune.xml
+          url: "https://raw.githubusercontent.com/f5devcentral/f5-asm-policy-template-v13/master/owasp_ready_template/owasp-no-autotune.xml"
           ignoreChanges: true
-  phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93
+  phone_home_url: "https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93"
+  phone_home_cli: "curl -i -X POST -H 'X-Auth-Token: gAAAAABc5UscwS1py5XfC3yPcyN8KcgD7hYtEZ2-xHw95o4YIh0j5IDjAu9qId3JgMOp9hnHwP42mYA7oPPP0yl-OQXvCaCS3OezKlO7MsS-ZCTJzuS3sSysIMHTA78fGsXbMgCQZCi5G-evLG9xUNrYp5d3blhMnpHR0dlHPz6VMacNkPhyrQI' -H 'Content-Type: application/json' -H 'Accept: application/json' http://192.168.0.121:8004/v1/d3779c949b57403bb7f703016e91a425/stacks/demo_waf/3dd6ce45-bb8c-400d-a48c-87ac9e46e60e/resources/wait_handle/signal"
 ```
 
 The `phone_home_url` must take a `POST` reqeust. The `POST` body will be a JSON object with the following format:
@@ -528,6 +533,8 @@ The `phone_home_url` must take a `POST` reqeust. The `POST` body will be a JSON 
   "status": "COMPLETE"
 }
 ```
+
+The `phone_home_cli` will only be called if the module runs succesfully, to the degree the provisioning can be synchronized. The `phone_home_cli` command execution allows for OpenStack Heat and AWS CFT type wait condition resources to be use with their auto generated curl CLI notifications.
 
 In addition to the delcared elements, this module also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
 

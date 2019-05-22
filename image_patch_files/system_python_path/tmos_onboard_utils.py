@@ -165,6 +165,15 @@ def get_tmos_version():
     return version
 
 
+def get_tmos_product():
+    """Get the TMOS product string"""
+    product = subprocess.Popen(
+        "tmsh show sys version | grep Product | awk '{print $NF}'",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    return product
+
+
 def get_dmi_uuid():
     """Get the system UUID from DMI"""
     uuid = subprocess.Popen(
@@ -172,6 +181,21 @@ def get_dmi_uuid():
         stdout=subprocess.PIPE, shell=True
     ).communicate()[0].replace('\n', '')
     return uuid
+
+
+def get_hostname():
+    """Get the system hostname"""
+    return socket.gethostname()
+
+
+def run_cmd(cmd):
+    """Run a CLI command and return its output"""
+    cmd_stdout = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].replace('\n', '')
+    LOG.debug('running command %s produced %s', cmd, cmd_stdout)
+    return cmd_stdout
 
 
 def wait_for_mgmt_dhcp(timeout=None):
@@ -772,10 +796,12 @@ def phone_home(phone_home_url=None, do_enabled=False,
                 post_data = {}
                 post_data['id'] = get_dmi_uuid()
                 post_data['version'] = get_tmos_version()
+                post_data['product'] = get_tmos_product()
+                post_data['hostname'] = get_hostname()
                 post_data['management'] = get_mgmt_cidr()
+                post_data['installed_extensions'] = installed_extensions
                 post_data['do_enabled'] = do_enabled
                 post_data['as3_enabled'] = as3_enabled
-                post_data['installed_extensions'] = installed_extensions
                 post_data['status'] = status
                 post_json = json.dumps(post_data)
                 LOG.debug('POST %s - %s', phone_home_url, post_json)
