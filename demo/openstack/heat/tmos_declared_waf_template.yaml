@@ -160,6 +160,11 @@ parameters:
     description: Virtual Servers Subnet for Client Virtual Servers
     constraints:
       - custom_constraint: neutron.subnet
+  heat_timeout:
+    type: number
+    label: Heat Stack Timeout
+    description: The Heat stack timeout in seconds
+    default: 1800
 
 parameter_groups:
 - parameters:
@@ -191,6 +196,8 @@ parameter_groups:
   - vip_network
   - vip_mtu
   - vip_subnet
+- parameters:
+  - heat_timeout
 
 resources:
   tmos_mgmt_port:
@@ -238,6 +245,13 @@ resources:
       fixed_ips:
         - subnet: { get_param: vip_subnet }
         - subnet: { get_param: vip_subnet }
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      timeout: { get_param: heat_timeout }
   waf_instance:
     type: OS::Nova::Server
     depends_on: [tmos_mgmt_port, tmos_cluster_port, tmos_internal_port, tmos_vip_port]
@@ -277,6 +291,7 @@ resources:
             __waf_vip__: { get_attr: [ tmos_vip_port, fixed_ips, 1, ip_address ] }
             __waf_policy_url__: { get_param: waf_policy_url }
             __phone_home_url__: { get_param: phone_home_url }
+            __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
           template: |
             #cloud-config
             chpasswd:
@@ -289,8 +304,8 @@ resources:
             tmos_declared:
               enabled: true
               icontrollx_package_urls:
-                - __do_url__
-                - __as3_url__
+                - "__do_url__"
+                - "__as3_url__"
               do_declaration:
                 schemaVersion: 1.0.0
                 class: Device
@@ -386,7 +401,7 @@ resources:
                     serviceMain:
                       class: Service_HTTP
                       virtualAddresses:
-                        - __waf_ip__
+                        - __waf_vip__
                       snat: auto
                       pool: Pool1
                       policyWAF:
@@ -404,22 +419,38 @@ resources:
                             - 10.10.10.144
                     WAFPolicy:
                       class: WAF_Policy
-                      url: __waf_policy_url__
+                      url: "__waf_policy_url__"
                       ignoreChanges: true
-              phone_home_url: __phone_home_url__
+              phone_home_url: "__phone_home_url__"
+              phone_home_cli: "__wc_notify__"
             bootcmd:
               - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
 
 outputs:
-  tmos_management_private:
+  tmos_management_xui_private:
     description: TMOS management service IP address
-    value: { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }
-  tmos_management_public:
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  tmos_management_cli_private:
+    description: TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  tmos_management_xui_public:
     description: Floating IP access the TMOS management services
-    value: { get_resource: tmos_mgmt_floating_ip }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  tmos_management_cli_public:
+    description: TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  f5_declarative_onboarding:
+    description: Device Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  f5_appsvcs_extension:
+    description: Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
   tmos_waf_ip:
     description: TMOS Virtual Server IP address
     value: { get_attr: [ tmos_vip_port, fixed_ips, 1, ip_address ] }
   tmos_phone_home_url:
     description: Phone Home URL
     value: { get_param: phone_home_url }
+  heat_phone_home_cli:
+    description: Heat Wait Condition CLI
+    value: { get_attr: ['wait_handle', 'curl_cli'] }
