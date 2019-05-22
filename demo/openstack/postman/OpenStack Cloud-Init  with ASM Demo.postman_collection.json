@@ -1,0 +1,1320 @@
+{
+	"info": {
+		"_postman_id": "5f7d38d2-3334-4550-bcda-7250e76a29df",
+		"name": "OpenStack Cloud-Init  with ASM Demo",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Initial OpenStack Session Establishment",
+			"item": [
+				{
+					"name": "1. Keystone Project Authorization",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7a845fb1-6077-456d-808e-89e161485370",
+								"exec": [
+									"tests[\"OpenStack Authorization Token Present\"] =  postman.getResponseHeader(\"X-Subject-Token\")",
+									"postman.setEnvironmentVariable(\"auth_token\", postman.getResponseHeader(\"X-Subject-Token\"));",
+									"var auth_response = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"project_id\", auth_response[\"token\"][\"project\"][\"id\"]);",
+									"postman.setEnvironmentVariable(\"project_name\", auth_response[\"token\"][\"project\"][\"name\"]);",
+									"var services = auth_response[\"token\"][\"catalog\"];",
+									"for (var i = 0, slen = services.length; i < slen; i++) {",
+									"   var endpoints = services[i][\"endpoints\"];",
+									"   for (var j = 0, elen = endpoints.length; j < elen; j++) {",
+									"       if(endpoints[j][\"interface\"]===\"public\") {",
+									"           postman.setEnvironmentVariable(services[i][\"type\"]+\"_url\",endpoints[j][\"url\"]);",
+									"       }   ",
+									"   }",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"auth\": {\n    \"scope\": {\n      \"project\": {\n        \"domain\": {\n          \"name\": \"{{os_domain_name}}\"\n        },\n        \"name\": \"{{os_project_name}}\"\n      }\n    },\n    \"identity\": {\n      \"methods\": [\"password\"],\n      \"password\": {\n        \"user\": {\n          \"domain\": {\n            \"name\": \"{{os_domain_name}}\"\n          },\n          \"password\": \"{{os_password}}\",\n          \"name\": \"{{os_username}}\"\n        }\n      }\n    }\n  }\n}\n\n"
+						},
+						"url": {
+							"raw": "{{indentity_url}}/auth/tokens",
+							"host": [
+								"{{indentity_url}}"
+							],
+							"path": [
+								"auth",
+								"tokens"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create OpenStack Networking Resources (SDN)",
+			"item": [
+				{
+					"name": "1 - Resolve Networks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6784ca33-4cb9-4d46-890d-a69788f68d30",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var networks = response[\"networks\"]",
+									"",
+									"",
+									"for (var i = 0, elen = networks.length; i < elen; i++) {",
+									"",
+									"    if(networks[i][\"name\"] === \"management\") { ",
+									"        postman.setEnvironmentVariable(\"mgmt_net_uuid\", networks[i].id); ",
+									"        postman.setEnvironmentVariable(\"mgmt_net_mtu\", networks[i].mtu); ",
+									"        postman.setEnvironmentVariable(\"mgmt_subnet_uuid\", networks[i].subnets[0]);",
+									"    }",
+									"",
+									"    if(networks[i][\"name\"] === \"HA\") { ",
+									"        postman.setEnvironmentVariable(\"ha_net_uuid\", networks[i].id); ",
+									"        postman.setEnvironmentVariable(\"ha_net_mtu\", networks[i].mtu); ",
+									"        postman.setEnvironmentVariable(\"ha_subnet_uuid\", networks[i].subnets[0]);",
+									"    }",
+									"    ",
+									"    if(networks[i][\"name\"] === \"internal\") { ",
+									"        postman.setEnvironmentVariable(\"internal_net_uuid\", networks[i].id); ",
+									"        postman.setEnvironmentVariable(\"internal_net_mtu\", networks[i].mtu); ",
+									"        postman.setEnvironmentVariable(\"internal_subnet_uuid\", networks[i].subnets[0]);",
+									"    }",
+									"    ",
+									"    if(networks[i][\"name\"] === \"external\") { ",
+									"        postman.setEnvironmentVariable(\"external_net_uuid\", networks[i].id); ",
+									"        postman.setEnvironmentVariable(\"external_net_mtu\", networks[i].mtu); ",
+									"        postman.setEnvironmentVariable(\"external_subnet_uuid\", networks[i].subnets[0]);",
+									"    }",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/networks",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"networks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2 - Resolve Subnets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6784ca33-4cb9-4d46-890d-a69788f68d30",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var subnets = response[\"subnets\"]",
+									"",
+									"",
+									"for (var i = 0, elen = subnets.length; i < elen; i++) {",
+									"",
+									"    if(subnets[i][\"id\"] === postman.getEnvironmentVariable(\"mgmt_subnet_uuid\")) { ",
+									"        postman.setEnvironmentVariable(\"mgmt_subnet_cidr\", subnets[i].cidr);",
+									"        postman.setEnvironmentVariable(\"mgmt_subnet_maskbits\", subnets[i].cidr.split('/')[1]);",
+									"        postman.setEnvironmentVariable(\"mgmt_subnet_gateway\", subnets[i].gateway_ip);",
+									"    }",
+									"",
+									"    if(subnets[i][\"id\"] === postman.getEnvironmentVariable(\"ha_subnet_uuid\")) { ",
+									"        postman.setEnvironmentVariable(\"ha_subnet_cidr\", subnets[i].cidr);",
+									"        postman.setEnvironmentVariable(\"ha_subnet_maskbits\", subnets[i].cidr.split('/')[1]);",
+									"        postman.setEnvironmentVariable(\"ha_subnet_gateway\", subnets[i].gateway_ip);",
+									"    }",
+									"    ",
+									"    if(subnets[i][\"id\"] === postman.getEnvironmentVariable(\"internal_subnet_uuid\")) { ",
+									"        postman.setEnvironmentVariable(\"internal_subnet_cidr\", subnets[i].cidr);",
+									"        postman.setEnvironmentVariable(\"internal_subnet_maskbits\", subnets[i].cidr.split('/')[1]);",
+									"        postman.setEnvironmentVariable(\"internal_subnet_gateway\", subnets[i].gateway_ip);",
+									"    }",
+									"    ",
+									"    if(subnets[i][\"id\"] === postman.getEnvironmentVariable(\"external_subnet_uuid\")) { ",
+									"        postman.setEnvironmentVariable(\"external_subnet_cidr\", subnets[i].cidr);",
+									"        postman.setEnvironmentVariable(\"external_subnet_maskbits\", subnets[i].cidr.split('/')[1]);",
+									"        postman.setEnvironmentVariable(\"external_subnet_gateway\", subnets[i].gateway_ip);",
+									"    }",
+									"",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/subnets",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"subnets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3 - Resolve Images",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "069ce431-4d02-4f19-b891-e1997821dfab",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var images = response[\"images\"]",
+									"",
+									"",
+									"for (var i = 0, elen = images.length; i < elen; i++) {",
+									"",
+									"    if(images[i][\"name\"] === pm.variables.get(\"asm_os_image_name\")) { ",
+									"        postman.setEnvironmentVariable(\"asm_os_image_uuid\", images[i].id);",
+									"    }",
+									"",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{compute_url}}/images",
+							"host": [
+								"{{compute_url}}"
+							],
+							"path": [
+								"images"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4 - Resolve Flavors",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "069ce431-4d02-4f19-b891-e1997821dfab",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var flavors = response[\"flavors\"]",
+									"",
+									"",
+									"for (var i = 0, elen = flavors.length; i < elen; i++) {",
+									"",
+									"    if(flavors[i][\"name\"] === pm.variables.get(\"asm_os_flavor_name\")) { ",
+									"        postman.setEnvironmentVariable(\"asm_os_flavor_uuid\", flavors[i].id);",
+									"    }",
+									"",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{compute_url}}/flavors",
+							"host": [
+								"{{compute_url}}"
+							],
+							"path": [
+								"flavors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9 - Create ASM Management Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var port = response[\"port\"]",
+									"",
+									"",
+									"postman.setEnvironmentVariable(\"mgmt_port_uuid\", port.id);",
+									"postman.setEnvironmentVariable(\"mgmt_fixed_ip\", port.fixed_ips[0].ip_address);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"port\": {\n        \"admin_state_up\": true,\n        \"name\": \"asm-mgmt-port\",\n        \"network_id\": \"{{mgmt_net_uuid}}\",\n        \"port_security_enabled\": false,\n        \"fixed_ips\": [\n        \t{\n        \t\t\"subnet_id\": \"{{mgmt_subnet_uuid}}\"\n        \t}\n        ]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "10 - Create ASM HA Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var port = response[\"port\"]",
+									"",
+									"",
+									"postman.setEnvironmentVariable(\"ha_port_uuid\", port.id);",
+									"postman.setEnvironmentVariable(\"ha_fixed_ip\", port.fixed_ips[0].ip_address);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"port\": {\n        \"admin_state_up\": true,\n        \"name\": \"asm-ha-port\",\n        \"network_id\": \"{{ha_net_uuid}}\",\n        \"port_security_enabled\": false,\n        \"fixed_ips\": [\n        \t{\n        \t\t\"subnet_id\": \"{{ha_subnet_uuid}}\"\n        \t}\n        ]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "11 - Create ASM Internal Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var port = response[\"port\"]",
+									"",
+									"",
+									"postman.setEnvironmentVariable(\"internal_port_uuid\", port.id);",
+									"postman.setEnvironmentVariable(\"internal_fixed_ip\", port.fixed_ips[0].ip_address);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"port\": {\n        \"admin_state_up\": true,\n        \"name\": \"asm-internal-port\",\n        \"network_id\": \"{{internal_net_uuid}}\",\n        \"port_security_enabled\": false,\n        \"fixed_ips\": [\n        \t{\n        \t\t\"subnet_id\": \"{{internal_subnet_uuid}}\"\n        \t}\n        ]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "12  - Create ASM External Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var port = response[\"port\"]",
+									"",
+									"",
+									"postman.setEnvironmentVariable(\"external_port_uuid\", port.id);",
+									"postman.setEnvironmentVariable(\"external_fixed_ip\", port.fixed_ips[0].ip_address);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"port\": {\n        \"admin_state_up\": true,\n        \"name\": \"asm-external-port\",\n        \"network_id\": \"{{external_net_uuid}}\",\n        \"port_security_enabled\": false,\n        \"fixed_ips\": [\n        \t{\n        \t\t\"subnet_id\": \"{{external_subnet_uuid}}\"\n        \t}\n        ]\n    }\n}"
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get a VIP Address For the Sevice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c9523953-9b7e-4c32-9d00-65fc1084c09e",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var port = response[\"port\"];",
+									"",
+									"",
+									"var external_fixed_ip = postman.getEnvironmentVariable('external_fixed_ip');",
+									"var fixed_ips = port.fixed_ips;",
+									"var asm_vip_fixed_ip = null;",
+									"",
+									"",
+									"for (var i = 0, elen = fixed_ips.length; i < elen; i++) {",
+									"    if(fixed_ips[i].ip_address != external_fixed_ip) {",
+									"        asm_vip_fixed_ip = fixed_ips[i].ip_address;",
+									"    }",
+									"}",
+									"",
+									"postman.setEnvironmentVariable(\"asm_vip_address\", asm_vip_fixed_ip);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"port\": {\n\t    \"fixed_ips\" : [\n\t        {\n\t    \t    \"ip_address\": \"{{external_fixed_ip}}\",\n\t    \t    \"subnet_id\": \"{{external_subnet_uuid}}\"\n\t        }, \n\t        {\n\t    \t    \"subnet_id\": \"{{external_subnet_uuid}}\"\n\t        }\n\t    ]\n\t}\n\t\n}"
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports/{{external_port_uuid}}",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports",
+								"{{external_port_uuid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "14 - Resolve Floating IP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2851e85e-3ec5-4945-a3c3-64aa738dbb4f",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var floatingips = response[\"floatingips\"]",
+									"var floatingip_uuid = null;",
+									"var floatingip_address = null;",
+									"",
+									"for (var i = 0, elen = floatingips.length; i < elen; i++) {",
+									"    if( ( ! floatingip_uuid ) && floatingips[i][\"status\"] === \"DOWN\") { ",
+									"        floatingip_uuid = floatingips[i].id;",
+									"        floatingip_address = floatingips[i].floating_ip_address;",
+									"    }",
+									"}",
+									"",
+									"postman.setEnvironmentVariable(\"mgmt_floatingip_uuid\", floatingip_uuid);",
+									"postman.setEnvironmentVariable(\"mgmt_floatingip_address\", floatingip_address);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/floatingips",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"floatingips"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "15 - Associate Floating IP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2851e85e-3ec5-4945-a3c3-64aa738dbb4f",
+								"exec": [
+									"tests[\"Floating IP Associated\"] = responseCode.code === 200"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"floatingip\" : {\n        \"port_id\": \"{{mgmt_port_uuid}}\"\n    }\n}\n\n"
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/floatingips/{{mgmt_floatingip_uuid}}",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"floatingips",
+								"{{mgmt_floatingip_uuid}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "54ecaf00-f750-40c7-8530-8fd691f5a082",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "f4f29f8d-6862-45cb-a0c9-11434d679c8b",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Create OpenStack Compute Resources",
+			"item": [
+				{
+					"name": "13 - Create ASM Instance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2851e85e-3ec5-4945-a3c3-64aa738dbb4f",
+								"exec": [
+									"var response = JSON.parse(responseBody);",
+									"var server = response[\"server\"]",
+									"",
+									"postman.setEnvironmentVariable(\"asm_instance_uuid\", server.id);",
+									"",
+									"tests[\"Instance Created\"] = responseCode.code === 202"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "7768f1c7-22e7-482d-ae53-be8e60dce6a6",
+								"exec": [
+									"var user_data_unencoded = `#cloud-config",
+									"chpasswd: ",
+									"  expire: false",
+									"  list: |",
+									"      root:{{ root_password }}",
+									"      admin:{{ admin_password }}",
+									"tmos_declared:",
+									"  enabled: true",
+									"  icontrollx_package_urls:",
+									"    - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.4.0-1.noarch.rpm",
+									"    - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.11.0-3.noarch.rpm",
+									"  do_declaration:",
+									"    schemaVersion: 1.0.0",
+									"    class: Device",
+									"    async: true",
+									"    label: Cloudinit Onboarding",
+									"    Common:",
+									"      class: Tenant",
+									"      provisioningLevels:",
+									"        class: Provision",
+									"        ltm: nominal",
+									"        asm: nominal",
+									"      poolLicense:",
+									"        class: License",
+									"        licenseType: licensePool",
+									"        bigIqHost: {{ bigiq_host }}",
+									"        bigIqUsername: {{ bigiq_username }}",
+									"        bigIqPassword: {{ bigiq_password }}",
+									"        licensePool: {{ license_pool }}",
+									"        reachable: true",
+									"        bigIpUsername: admin",
+									"        bigIpPassword: {{ asm_admin_password }}",
+									"      dnsServers:",
+									"        class: DNS",
+									"        nameServers:",
+									"          - {{ mgmt_dns_server }}",
+									"        search:",
+									"          - example.openstack.com",
+									"      ntpServers:",
+									"        class: NTP",
+									"        servers:",
+									"          - 0.pool.ntp.org",
+									"          - 1.pool.ntp.org",
+									"          - 2.pool.ntp.org",
+									"      HA:",
+									"        class: VLAN",
+									"        mtu: {{ ha_net_mtu }}",
+									"        interfaces:",
+									"          - name: 1.1",
+									"            tagged: false",
+									"      HA-self:",
+									"        class: SelfIp",
+									"        address: {{ ha_fixed_ip }}/{{ ha_subnet_maskbits }}",
+									"        vlan: HA",
+									"        allowService: all",
+									"        trafficGroup: traffic-group-local-only",
+									"      configsync:",
+									"        class: ConfigSync",
+									"        configsyncIp: /Common/HA-self/address",
+									"      internal:",
+									"        class: VLAN",
+									"        mtu: {{ internal_net_mtu }}",
+									"        interfaces:",
+									"          - name: 1.2",
+									"            tagged: false",
+									"      internal-self:",
+									"        class: SelfIp",
+									"        address: {{ internal_fixed_ip }}/{{ internal_subnet_maskbits }}",
+									"        vlan: internal",
+									"        allowService: default",
+									"        trafficGroup: traffic-group-local-only",
+									"      external:",
+									"        class: VLAN",
+									"        mtu: {{ external_net_mtu }}",
+									"        interfaces:",
+									"          - name: 1.3",
+									"            tagged: false",
+									"      external-self:",
+									"        class: SelfIp",
+									"        address: {{ external_fixed_ip }}/{{ external_subnet_maskbits }}",
+									"        vlan: external",
+									"        allowService: none",
+									"        trafficGroup: traffic-group-local-only",
+									"      default:",
+									"        class: Route",
+									"        gw: {{ external_subnet_gateway }}",
+									"        network: default",
+									"        mtu: 1500",
+									"      dbvars:",
+									"        class: DbVariables",
+									"        ui.advisory.enabled: true",
+									"        ui.advisory.color: orange",
+									"        ui.advisory.text: This device is under centralized management.",
+									"  as3_declaration:",
+									"    class: ADC",
+									"    schemaVersion: 3.0.0",
+									"    label: ASM_VS1",
+									"    remark: ASM_VS1",
+									"    Sample_app_sec_01:",
+									"      class: Tenant",
+									"      HTTP_Service:",
+									"        class: Application",
+									"        template: http",
+									"        serviceMain:",
+									"          class: Service_HTTP",
+									"          virtualAddresses:",
+									"            - {{ asm_vip_address }}",
+									"          snat: auto",
+									"          pool: Pool1",
+									"          policyWAF:",
+									"            use: WAFPolicy",
+									"        Pool1:",
+									"          class: Pool",
+									"          monitors:",
+									"            - http",
+									"          members:",
+									"            - servicePort: 8001",
+									"              serverAddresses:",
+									"                - 10.10.10.143",
+									"            - servicePort: 8002",
+									"              serverAddresses:",
+									"                - 10.10.10.144",
+									"        WAFPolicy:",
+									"          class: WAF_Policy",
+									"          url: {{ asm_policy_template_url }}",
+									"          ignoreChanges: true",
+									"  phone_home_url: https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93",
+									"bootcmd:",
+									"  - \"printf \\\\\"platform=Z100\\\\nfamily=0xC000000\\\\nhost=Z100\\\\nsystype=0x71\\\\n\\\\\">/PLATFORM\"",
+									"`;",
+									"",
+									"user_data_unencoded = user_data_unencoded.replace('{{ bigiq_host }}', pm.variables.get('bigiq_host'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ bigiq_username }}', pm.variables.get('bigiq_username'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ bigiq_password }}', pm.variables.get('bigiq_password'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ license_pool }}', pm.variables.get('license_pool'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ mgmt_dns_server }}', pm.variables.get('mgmt_dns_server'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ ha_net_mtu }}', pm.variables.get('ha_net_mtu'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ ha_fixed_ip }}', pm.variables.get('ha_fixed_ip'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ ha_subnet_maskbits }}', pm.variables.get('ha_subnet_maskbits'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ internal_net_mtu }}', pm.variables.get('internal_net_mtu'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ internal_fixed_ip }}', pm.variables.get('internal_fixed_ip'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ internal_subnet_maskbits }}', pm.variables.get('internal_subnet_maskbits'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ external_net_mtu }}', pm.variables.get('external_net_mtu'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ external_fixed_ip }}', pm.variables.get('external_fixed_ip'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ external_subnet_maskbits }}', pm.variables.get('external_subnet_maskbits'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ external_subnet_gateway }}', pm.variables.get('external_subnet_gateway'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ asm_vip_address }}', pm.variables.get('asm_vip_address'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ asm_policy_template_url }}', pm.variables.get('asm_policy_template_url'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ root_password }}', pm.variables.get('asm_root_password'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ admin_password }}', pm.variables.get('asm_admin_password'));",
+									"user_data_unencoded = user_data_unencoded.replace('{{ asm_admin_password }}', pm.variables.get('asm_admin_password'));",
+									"postman.setEnvironmentVariable('asm_user_data_encoded', btoa(user_data_unencoded));",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"server\" : {\n        \"name\" : \"test-asm\",\n        \"imageRef\" : \"{{asm_os_image_uuid}}\",\n        \"flavorRef\" : \"{{asm_os_flavor_uuid}}\",\n        \"metadata\" : {\n            \"ASMPool\" : \"whatever\"\n        },\n        \"networks\": [\n           { \"port\": \"{{mgmt_port_uuid}}\" },\n           { \"port\": \"{{ha_port_uuid}}\" },\n           { \"port\": \"{{internal_port_uuid}}\" },\n           { \"port\": \"{{external_port_uuid}}\" }\n        ],\n        \"config_drive\": true,\n        \"user_data\" : \"{{asm_user_data_encoded}}\"\n    }\n}\n\n"
+						},
+						"url": {
+							"raw": "{{compute_url}}/servers",
+							"host": [
+								"{{compute_url}}"
+							],
+							"path": [
+								"servers"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Delete OpenStack Resources",
+			"item": [
+				{
+					"name": "1 - Dissassociate ASM Floating IP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2851e85e-3ec5-4945-a3c3-64aa738dbb4f",
+								"exec": [
+									"tests[\"Floating IP Disassociated\"] = responseCode.code === 200;"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"floatingip\" : { }\n}\n\n"
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/floatingips/{{mgmt_floatingip_uuid}}",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"floatingips",
+								"{{mgmt_floatingip_uuid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2 - Delete ASM Instance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6983c8f6-2a88-471f-ac81-3261c07e7d08",
+								"exec": [
+									"tests[\"Instance Deleted\"] = responseCode.code === 204"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{compute_url}}/servers/{{asm_instance_uuid}}",
+							"host": [
+								"{{compute_url}}"
+							],
+							"path": [
+								"servers",
+								"{{asm_instance_uuid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3 - Delete ASM Management Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"tests[\"Management Port Deleted\"] = responseCode.code === 204",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports/{{mgmt_port_uuid}}",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports",
+								"{{mgmt_port_uuid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4 - Delete ASM HA Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"tests[\"Management Port Deleted\"] = responseCode.code === 204",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports/{{ha_port_uuid}}",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports",
+								"{{ha_port_uuid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5 - Delete ASM Internal Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"tests[\"Management Port Deleted\"] = responseCode.code === 204",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports/{{internal_port_uuid}}",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports",
+								"{{internal_port_uuid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6 - Delete ASM External Port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b1a43508-53cb-48a2-8e4a-7c3b006b642c",
+								"exec": [
+									"tests[\"Management Port Deleted\"] = responseCode.code === 204",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{network_url}}/v2.0/ports/{{external_port_uuid}}",
+							"host": [
+								"{{network_url}}"
+							],
+							"path": [
+								"v2.0",
+								"ports",
+								"{{external_port_uuid}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "2541daf7-7412-4cd6-8ed3-d4a15f8ed89d",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "872ff933-439c-4827-907d-8a2aa15b2335",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "8a3b7ee5-5cea-42eb-abd4-064793f4b7e2",
+			"key": "access_protocol",
+			"value": "http",
+			"type": "string"
+		},
+		{
+			"id": "ea7b52c9-1bfb-45f3-84e0-40ff7dfec5bb",
+			"key": "controller_host",
+			"value": "controller.example.openstack.com",
+			"type": "string"
+		},
+		{
+			"id": "74051307-9794-4f36-8755-9abd4d18766c",
+			"key": "indentity_url",
+			"value": "{{access_protocol}}://{{controller_host}}:5000/v3",
+			"type": "string"
+		},
+		{
+			"id": "3b041954-43c0-4af7-8f3d-ff7258e1777a",
+			"key": "os_username",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"id": "1adfe0ff-49a3-4a07-a080-926dee6ac72a",
+			"key": "os_password",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"id": "993af25b-7e9f-4a84-952b-0f1641051073",
+			"key": "os_project_name",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"id": "a1e53f65-bb75-4621-87f4-f7eb8039340c",
+			"key": "os_domain_name",
+			"value": "default",
+			"type": "string"
+		},
+		{
+			"id": "d9dd8837-c9f6-484b-888a-60e6c9b9b947",
+			"key": "asm_os_image_name",
+			"value": "OpenStack_BIGIP-14.1.0.1-0.0.7.ALL_1SLOT",
+			"type": "string"
+		},
+		{
+			"id": "f07ec38c-59b2-4914-8936-f2694454b8a4",
+			"key": "asm_os_flavor_name",
+			"value": "m1.bigip.ALL.1SLOT",
+			"type": "string"
+		},
+		{
+			"id": "2fa6f11f-4893-430c-9b9b-815c5c740233",
+			"key": "asm_admin_password",
+			"value": "f5c0nfig",
+			"type": "string"
+		},
+		{
+			"id": "956b370c-7365-4e82-b31f-fbd16913f5ce",
+			"key": "asm_root_password",
+			"value": "f5c0nfig",
+			"type": "string"
+		},
+		{
+			"id": "d12cf825-3673-4fbe-a44c-344a9a1bf3df",
+			"key": "asm_policy_template_url",
+			"value": "https://raw.githubusercontent.com/f5devcentral/f5-asm-policy-template-v13/master/owasp_ready_template/owasp-no-autotune.xml",
+			"type": "string"
+		},
+		{
+			"id": "a8eb2ba4-8e41-49f8-855c-a412d0437050",
+			"key": "bigiq_host",
+			"value": "licensor.example.openstack.com",
+			"type": "string"
+		},
+		{
+			"id": "cd549f39-88e7-4bf6-a2f0-dec4e0556b5c",
+			"key": "bigiq_username",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"id": "c682c1a9-d3f9-4851-8a17-8d1cac736a96",
+			"key": "bigiq_password",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"id": "0f7bcffe-2e80-4935-a97a-8203c552a443",
+			"key": "license_pool",
+			"value": "BIGIPVEREGKEYS",
+			"type": "string"
+		}
+	]
+}
