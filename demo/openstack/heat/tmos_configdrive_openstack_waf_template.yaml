@@ -1,0 +1,354 @@
+################################################################################
+#
+# F5 Heat Template to Orchestrate a 4 NIC WAF
+#
+#    Management Network
+# ------------------------------ License Activation with BIG-IQ
+#           |
+#     eth0  |    HA Network
+#        -------      |
+#        | VE  | 1.1  |        TMM 1.1 - HA Interface
+#        |     |   ---|        TMM 1.2,3 - Network 1,2
+#        -------      |
+# 1.2,3    | |
+# ------------------------------
+#    Data Network
+#
+################################################################################
+heat_template_version: 2015-10-15
+
+description: F5 Heat Template to Orchestrate a 4 NIC TMOS WAF
+
+parameters:
+  tmos_image:
+    type: string
+    label: TMOS VE Disk Image
+    description: The image to be used on the TMOS VE instance.
+    constraints:
+      - custom_constraint: glance.image
+  tmos_flavor:
+    type: string
+    label: TMOS VE Flavor
+    description: Type of instance (flavor) to be used for the TMOS VE instance.
+    default: m1.bigip.ALL.1SLOT
+    constraints:
+      - custom_constraint: nova.flavor
+  tmos_root_password:
+    type: string
+    label: TMOS Root Password
+    description: Password to set for the built-in root user
+    default: f5c0nfig
+    hidden: true
+  tmos_admin_password:
+    type: string
+    label: TMOS Administrator Password
+    description: Password to set for the built-in admin user
+    default: f5c0nfig
+    hidden: true
+  f5_declarative_onboarding_url:
+    type: string
+    label: f5-declarative-onboarding URL
+    description: The URL to download the f5-declarative-onboarding RPM
+    default: https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.4.0-1.noarch.rpm
+  f5_appsvcs_extension_url:
+    type: string
+    label: f5-appsvcs-extension URL
+    description: The URL to download the f5-appsvcs-extension RPM
+    default: https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.11.0-3.noarch.rpm
+  license_host:
+    type: string
+    label: BIG-IQ Licensor Host
+    description: BIG-IQ IP or hostname to license TMOS VE instance
+    default: None
+  license_username:
+    type: string
+    label: BIG-IQ User
+    description: BIG-IQ user name
+    default: admin
+  license_password:
+    type: string
+    hidden: true
+    label: BIG-IQ Password
+    description: BIG-IQ password
+    default: admin
+  license_pool:
+    type: string
+    label: BIG-IQ License Pool
+    description: BIG-IQ license pool for this TMOS VE instance
+    default: None
+  waf_policy_url:
+    type: string
+    label: WAF Policy URL
+    description: URL for the TMOS ASM Policy XML Template
+    default: https://raw.githubusercontent.com/f5devcentral/f5-asm-policy-template-v13/master/owasp_ready_template/owasp-no-autotune.xml
+  phone_home_url:
+    type: string
+    label: Phone Home URL
+    description: URL for the phone home when onboarding finishes
+    default: https://webhook.site/
+  external_network:
+    type: string
+    label: External Access Network
+    description: The network to assign Floating IPs for management access
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  management_network:
+    type: string
+    label: Management Network
+    description: OAM Network
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  cluster_network:
+    type: string
+    label: Cluster Network
+    description: HA Cluster Sync Network
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  internal_network:
+    type: string
+    label: Internal Server Network
+    description: Internal Server Network
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  vip_network:
+    type: string
+    label: Virtual Servers Network
+    description: Virtual Servers Network for Client Traffic
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  vip_subnet:
+    type: string
+    label: Virtual Servers Subnet
+    description: Virtual Servers Subnet for Client Virtual Servers
+    constraints:
+      - custom_constraint: neutron.subnet
+  heat_timeout:
+    type: number
+    label: Heat Stack Timeout
+    description: The Heat stack timeout in seconds
+    default: 1800
+
+parameter_groups:
+- parameters:
+  - tmos_image
+  - tmos_flavor
+- parameters:
+  - tmos_root_password
+  - tmos_admin_password
+- parameters:
+  - license_host
+  - license_username
+  - license_password
+  - license_pool
+- parameters:
+  - f5_declarative_onboarding_url
+  - f5_appsvcs_extension_url
+- parameters:
+  - waf_policy_url
+  - phone_home_url
+- parameters:
+  - external_network
+  - management_network
+  - cluster_network
+  - internal_network
+  - vip_network
+  - vip_subnet
+- parameters:
+  - heat_timeout
+
+resources:
+  tmos_mgmt_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  tmos_mgmt_floating_ip:
+    type: OS::Neutron::FloatingIP
+    depends_on: tmos_mgmt_port
+    properties:
+      floating_network: { get_param: external_network }
+      port_id: { get_resource: tmos_mgmt_port }
+  tmos_cluster_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: cluster_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  tmos_internal_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: internal_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  tmos_vip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: vip_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+      fixed_ips:
+        - subnet: { get_param: vip_subnet }
+        - subnet: { get_param: vip_subnet }
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      timeout: { get_param: heat_timeout }
+  waf_instance:
+    type: OS::Nova::Server
+    depends_on: [tmos_mgmt_port, tmos_cluster_port, tmos_internal_port, tmos_vip_port]
+    properties:
+      image: { get_param: tmos_image }
+      flavor: { get_param: tmos_flavor }
+      config_drive: true
+      key_name: admin
+      networks:
+        - port: { get_resource: tmos_mgmt_port }
+        - port: { get_resource: tmos_cluster_port }
+        - port: { get_resource: tmos_internal_port }
+        - port: { get_resource: tmos_vip_port }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __root_password__: { get_param: tmos_root_password }
+            __admin_password__: { get_param: tmos_admin_password }
+            __bigiq_host__: { get_param: license_host }
+            __bigiq_username__: { get_param: license_username }
+            __bigiq_password__: { get_param: license_password }
+            __license_pool__: { get_param: license_pool }
+            __do_url__: { get_param: f5_declarative_onboarding_url }
+            __as3_url__: { get_param: f5_appsvcs_extension_url }
+            __waf_vip__: { get_attr: [ tmos_vip_port, fixed_ips, 1, ip_address ] }
+            __waf_policy_url__: { get_param: waf_policy_url }
+            __phone_home_url__: { get_param: phone_home_url }
+            __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
+          template: |
+            #cloud-config
+            chpasswd:
+              expire: false
+              list: |
+                root:__root_password__
+                admin:__admin_password__
+            tmos_configdrive_openstack:
+              enabled: true
+              rd_enabled: false
+              configsync_interface: 1.1
+              default_route_interface: 1.3
+              inject_routes: true
+              icontrollx_package_urls:
+                - "__do_url__"
+                - "__as3_url__"
+              do_enabled: true
+              do_declaration:
+                schemaVersion: 1.0.0
+                class: Device
+                async: true
+                label: Cloudinit Onboarding
+                Common:
+                  class: Tenant
+                  provisioningLevels:
+                    class: Provision
+                    ltm: nominal
+                    asm: nominal
+                  poolLicense:
+                    class: License
+                    licenseType: licensePool
+                    bigIqHost: __bigiq_host__
+                    bigIqUsername: __bigiq_username__
+                    bigIqPassword: __bigiq_password__
+                    licensePool: __license_pool__
+                    reachable: true
+                    bigIpUsername: admin
+                    bigIpPassword: __admin_password__
+                  dbvars:
+                    class: DbVariables
+                    ui.advisory.enabled: true
+                    ui.advisory.color: orange
+                    ui.advisory.text: This device is under centralized management.
+              as3_declaration:
+                class: ADC
+                schemaVersion: 3.0.0
+                label: ASM_VS1
+                remark: ASM_VS1
+                Sample_app_sec_01:
+                  class: Tenant
+                  HTTP_Service:
+                    class: Application
+                    template: http
+                    serviceMain:
+                      class: Service_HTTP
+                      virtualAddresses:
+                        - __waf_vip__
+                      snat: auto
+                      pool: Pool1
+                      policyWAF:
+                        use: WAFPolicy
+                    Pool1:
+                      class: Pool
+                      monitors:
+                        - http
+                      members:
+                        - servicePort: 8001
+                          serverAddresses:
+                            - 10.10.10.143
+                        - servicePort: 8002
+                          serverAddresses:
+                            - 10.10.10.144
+                    WAFPolicy:
+                      class: WAF_Policy
+                      url: "__waf_policy_url__"
+                      ignoreChanges: true
+              phone_home_url: "__phone_home_url__"
+              phone_home_cli: "__wc_notify__"
+            bootcmd:
+              - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
+
+outputs:
+  tmos_management_xui_private:
+    description: TMOS management service IP address
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  tmos_management_cli_private:
+    description: TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  tmos_management_xui_public:
+    description: Floating IP access the TMOS management services
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  tmos_management_cli_public:
+    description: TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  f5_declarative_onboarding:
+    description: Device Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  f5_appsvcs_extension:
+    description: Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+  tmos_waf_ip:
+    description: TMOS Virtual Server IP address
+    value: { get_attr: [ tmos_vip_port, fixed_ips, 1, ip_address ] }
+  tmos_phone_home_url:
+    description: Phone Home URL
+    value: { get_param: phone_home_url }
+  heat_phone_home_cli:
+    description: Heat Wait Condition CLI
+    value: { get_attr: ['wait_handle', 'curl_cli'] }
