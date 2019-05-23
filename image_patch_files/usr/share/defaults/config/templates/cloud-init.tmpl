@@ -58,9 +58,9 @@ cloud_init_modules:
 @perl_begin
     print " #" if 'UNIX_CONFIG_CLOUDINIT_REPLACE_HASRUNCMD' ne 'true';
     print " - set-passwords\n";
-    print " - tmos-openstack-network-data-config\n";
-    print " - tmos-dhcp-tmm\n";
+    print " - tmos-configdrive-openstack\n";
     print " - tmos-static-mgmt\n";
+    print " - tmos-dhcp4-tmm\n";
     print " - tmos-declared\n";
     print " - runcmd\n";
 @perl_end
