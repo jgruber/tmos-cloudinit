@@ -41,7 +41,7 @@ parameters:
     hidden: true
   tmos_root_authorized_ssh_key:
     type: string
-    label: SSH Public Key Name
+    label: SSH Public Key
     description: Authorized SSH public key for the root TMOS user
     default: None
   tmos_admin_password:
@@ -158,8 +158,7 @@ parameters:
     type: string
     label: Virtual Servers Subnet
     description: Virtual Servers Subnet for Client Virtual Servers
-    constraints:
-      - custom_constraint: neutron.subnet
+    default: None
   heat_timeout:
     type: number
     label: Heat Stack Timeout
