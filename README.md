@@ -1,19 +1,23 @@
 # tmos-cloudinit
 ### Cloudinit Modules and Patching for F5  TMOS ###
 
-F5 TMOS is a secured and close operating system which can not take advantage of the linux community's work to standardize cloud virtual machine onboarding through the cloudinit project.
+F5 TMOS is a secured operating system designed for deployment as a network appliance. While TMOS utilizes a CentOS based kernel and linux based control processes to bootstrap and configure distributed networking microkernels, it has been highly customized from typical linux distributions.  
 
-Starting with TMOS v13, an order version of cloudinit was included with TMOS, but had only the following modules available:
+Linux distributions use a standard bootstrapping agent known as cloudinit to integrate cloud infrastructure metadata with the systems init processes.
+
+Starting with TMOS v13, TMOS inluded a version of cloudinit, but due to TMOS customizations, only the following cloudinit modules were enabled available:
 
 - bootcmd
 - write_file
 - runcmd
 
-Through the use of these cloudinit modules, various combinates of `bash`, `javascript`, and `python` onboard scripting evolved within specific cloud ecosystems. The templating depended on the environment and what orchestration systems were available. 
+Through the use of these cloudinit modules, various combinates of `bash`, `javascript`, and `python` onboard scripting evolved within specific cloud ecosystems. TMOS onboarding templates were created for various IaaS environments. The templates created the necessary provisioning scripts gleaning instance metadata from source unique to each IaaS environment. 
 
-In an attempt to standardize these efforsts, F5 launched a set of declarative `iControl LX` extensions which are used to configure TMOS and provision BIG-IP services. These extensions, marketed as the Automation and Orchestration (A & O) toolchain, can be installed on TMOS devices and then called through RESTful interfaces. These extensions do not come preinstalled nor do the take advantage of the configuration metadata provided by cloud environments to virtual machines instances through cloudinit. The cloudinit modules in this repository tie cloudinit userdata and the F5 A & O toolchain together.
+In an attempt to standardize TMOS orchestration efforts, F5 created an extensible service framework capable of extending TMOS' REST provisioning called iControl LX. Supported iControl LX extensions which provided base TMOS system provisioning (f5-declarative-onboaring) and TMM service provisioning (f5-appsvcs-extension) are constantly evolving to support a catalog of deployment use cases. These and other extensions make up the F5 Automation and Orchestration (A & O) toolchain.
 
-The cloudinit modules included in this repository need to be file-injected into standard TMOS images before they can be used.
+The cloudinit modules found in this repository unity TMOS cloudinit agent support with iControl LX extensions. Each of these modules support the publishing and installation of iControl LX extensions for use in TMOS orchestration. There are experimental cloudinit modules to extend TMOS support for static management interface provisioning, provisioning of TMM interfaces through DHCPv4, and total system network provisioning gleaned from TMOS standard network_data.json metadata.  
+
+The cloudinit modules included in this repository need to be file-injected into standard TMOS v13+ images before they can be used.
 
 ## Patching TMOS VE Images Using an Ubuntu OpenStack Instance ##
 
