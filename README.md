@@ -26,7 +26,7 @@ This repository includes a Dockerfile and patch scripts which can build a Docker
 Download the images you wish to patch with this repositories' cloudinit modules, and optionally iControl LX extension, to a directories available as a volume to your docker instance.
 
 ```
-s /data/BIGIP-14.1
+ls /data/BIGIP-14.1
 BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova
 BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.qcow2.zip
 BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi.ova
