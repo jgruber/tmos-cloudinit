@@ -19,155 +19,130 @@ The cloudinit modules found in this repository unity TMOS cloudinit agent suppor
 
 The cloudinit modules included in this repository need to be file-injected into standard TMOS v13+ images before they can be used.
 
-## Patching TMOS VE Images Using an Ubuntu OpenStack Instance ##
+## Patching TMOS VE Images Using a Docker Instance ##
 
-This repository comes with a simple `bash` script to patch OpenStack qcow2 contained images. In the future, F5 intends to release an image bakery tools which will formalize how to patch TMOS VE images for all supported container types.
+This repository includes a Dockerfile and patch scripts which can build a Docker instance capable of patching standard images from `downloads.f5.com` to include additional cloudinit modules and iControl LX extensions.
 
-To build a host which can run the simple OpenStack image build script, start an Ubuntu server 18.04 LTS OpenStack cloud instance. Make sure the cloud instance can route traffic requests to your OpenStack cloud Glance services. The script will upload your patched images to your OpenStack cloud. 
-
-Most of the functions performed in the patch script require root level access within your virtual machine. You can open a root login session from `sudo` with `sudo -l`. Simply terminate the VM instance when you are finished patching your images.
-
-Install require packages.
+Download the images you wish to patch with this repositories' cloudinit modules, and optionally iControl LX extension, to a directories available as a volume to your docker instance.
 
 ```
-root@tmosimagebuilder:~# apt update
-root@tmosimagebuilder:~# apt install qemu-utils python-openstackclient git
+s /data/BIGIP-14.1
+BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova
+BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.qcow2.zip
+BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi.ova
+BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.vhd.zip
+BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide.ova
+BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi.ova
+BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2.zip
+BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd.zip
 ```
 
-Download this repository
+You can also prepare a directory which can container iControl LX packag `rpm` files.
 
 ```
-root@tmosimagebuilder:~# git clone https://github.com/jgruber/tmos-cloudinit.git
-Cloning into 'tmos-cloudinit'...
-remote: Enumerating objects: 122, done.
-remote: Counting objects: 100% (122/122), done.
-remote: Compressing objects: 100% (73/73), done.
-remote: Total 122 (delta 49), reused 90 (delta 29), pack-reused 0
-Receiving objects: 100% (122/122), 52.64 KiB | 2.11 MiB/s, done.
-Resolving deltas: 100% (49/49), done.
-root@tmosimagebuilder:~# cd tmos-cloudinit/
-root@tmosimagebuilder:~/tmos-cloudinit# 
+$ ls /data/iControlLXLatestBuild
+f5-appsvcs-3.11.0-3.noarch.rpm
+f5-declarative-onboarding-1.4.0-1.noarch.rpm
 ```
 
-Download predownloaded stock TMOS images from downloads.f5.com to the virtual machine. 
+## Note: do not remove the disk images from their archive containers (zip or ova) ##
+
+You can build the docker image from the `tmos_image_patcher` Dockerfile.
 
 ```
-root@tmosimagebuilder:~/tmos-cloudinit# mkdir TMOSImages
-root@tmosimagebuilder:~/tmos-cloudinit# cd TMOSImages
-root@tmosimagebuilder:~/tmos-cloudinit# curl http://192.168.0.65/F5Downloads/BIGIP-14.1.0.1-0.0.7.ALL_1SLOT.qcow2
-root@tmosimagebuilder:~/tmos-cloudinit# curl http://192.168.0.65/F5Downloads/BIGIP-14.1.0.1-0.0.7.LTM_1SLOT.qcow2
-root@tmosimagebuilder:~/tmos-cloudinit# cd ..
+$ docker build -t tmos_image_patcher:1.0 tmos_image_patcher
 ```
 
-Download any iControl LX extensions you wish to install in your image.
+After the build process completes, you should have a docker image available to you locally.
 
 ```
-root@tmosimagebuilder:~/tmos-cloudinit# mkdir iControlLXExtensions
-root@tmosimagebuilder:~/tmos-cloudinit# cd iControlLXExtensions
-root@tmosimagebuilder:~/tmos-cloudinit# curl -s -O -L https://github.com/F5Networks/f5-declarative-onboarding/blob/master/dist/f5-declarative-onboarding-1.4.0-1.noarch.rpm
-root@tmosimagebuilder:~/tmos-cloudinit# curl -s -O -L https://github.com/F5Networks/f5-appsvcs-extension/releases/download/v3.11.0/f5-appsvcs-3.11.0-3.noarch.rpm
-root@tmosimagebuilder:~/tmos-cloudinit# cd ..
+$ docker images | grep tmos_image_patcher
+tmos_image_patcher    1.0    3416ed456cfe    22 seconds ago    1.38GB
 ```
 
-Download your OpenStack RC environment file and import.
+Patched images can then be build by creating a `tmos_image_builder` docker instance based on your image.
+
+Make sure you create the mounts as specified below. Your TMOS image archives folder should be mounted as a volume to `/TMOSImages` and any 
+iControl LX extensions you want injected into your image shuld be mounted to the instances' `/iControlLXPackages` directory.
 
 ```
-root@tmosimagebuilder:~/tmos-cloudinit# . admin-openrc.sh
-root@tmosimagebuilder:~/tmos-cloudinit# openstack image list
-+--------------------------------------+------------------------------------------+--------+
-| ID                                   | Name                                     | Status |
-+--------------------------------------+------------------------------------------+--------+
-| dbd0e31f-56da-4eae-8499-a74d17dec12f | cirros                                   | active |
-| ecf217ab-3685-451c-8ae3-240b4a8868e9 | ubuntu-18-04-server                      | active |
-+--------------------------------------+------------------------------------------+--------+
-```
+$ docker run --rm -it -v /data/BIGIP-14.1:/TMOSImages -v /data/iControlLXLatestBuild:/iControlLXPackages tmos_image_patcher:1.0
 
-Edit the `rebuild_qcow2_image.sh` script, updating the location of your OpenStack RC environment file and iControl LX extensions.
-
-```
-root@tmosimagebuilder:~/tmos-cloudinit# sed -i '/os_rc_file=/cos_rc_file="${wd}/admin-openrc.sh"' rebuild_qcow2_image.sh 
-root@tmosimagebuilder:~/tmos-cloudinit# sed -i '/icontrollx_rpm_injection_path=/cicontrollx_rpm_injection_path="${wd}/iControlLXExtensions"' rebuild_qcow2_image.sh
-```
-
-Patch your images.
+2019-05-29 22:43:48,133 - tmos_image_patcher - DEBUG - process start time: Wednesday, May 29, 2019 10:43:48
+2019-05-29 22:43:48,133 - tmos_image_patcher - INFO - Scanning for images in: /TMOSImages
+2019-05-29 22:43:48,133 - tmos_image_patcher - INFO - TMOS cloudinit modules sourced from: /tmos-cloudinit
+2019-05-29 22:43:48,133 - tmos_image_patcher - INFO - Copying iControl LX install packages from: /iControlLXPackages
+2019-05-29 22:43:48,133 - tmos_image_patcher - INFO - Patching TMOS /usr file system from: /tmos-cloudinit/image_patch_files/usr
+2019-05-29 22:43:48,133 - tmos_image_patcher - DEBUG - extracting /TMOSImages/BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.vhd.zip to /TMOSImages/BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.vhd
+2019-05-29 22:44:41,790 - tmos_image_patcher - DEBUG - extracting /TMOSImages/BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd.zip to /TMOSImages/BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd
+2019-05-29 22:45:41,653 - tmos_image_patcher - DEBUG - extracting /TMOSImages/BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide.ova to /TMOSImages/BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide
+...
 
 ```
-root@tmosimagebuilder:~/tmos-cloudinit# ./rebuild_qcow2_image.sh ./TMOSImages/BIGIP-14.1.0.1-0.0.7.LTM_1SLOT.qcow2 
-initializing imaging patching
-copying ./TMOSImages/BIGIP-14.1.0.1-0.0.7.LTM_1SLOT.qcow2 as base image for OpenStack_BIGIP-14.1.0.1-0.0.7.LTM_1SLOT.qcow2
-mounting OpenStack_BIGIP-14.1.0.1-0.0.7.LTM_1SLOT.qcow2 base image
-finding TMOS volume groups within base image
-patching cloud-init resources
-injecting python modules into python 2.7 system path
-injecting cloud-init.tmpl
-inserting iControl LX install packages
-injecting /root/tmos-cloudinit/iControlLXExtensions/f5-appsvcs-3.11.0-3.noarch.rpm
-injecting /root/tmos-cloudinit/iControlLXExtensions/f5-declarative-onboarding-1.4.0-1.noarch.rpm
-closing patched volumes
-uploading patched OpenStack_BIGIP-14.1.0.1-0.0.7.LTM_1SLOT.qcow2 to OpenStack
+
+Each TMOS image archive will be explaned into a folder containing your newly patched image. The image will be in the same format as the original. You can utilize your patched images just as you would the originals.
+
+```
+$ tree /data/BIGIP-14.1
+/data/BIGIP-14.1
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide
+│   └── *BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova*
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.qcow2
+│   └── *BIGIP-14.1.0.5-0.0.5.qcow2*
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.qcow2.zip
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi
+│   └── *BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi.ova*
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi.ova
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.vhd
+│   └── *BIGIP-14.1.0.5-0.0.5.vhd*
+├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.vhd.zip
+├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide
+│   └── *BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide.ova*
+├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide.ova
+├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2
+│   └── *BIGIP-14.1.0.5-0.0.5.qcow2*
+├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2.zip
+├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi
+│   └── *BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi.ova*
+├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi.ova
+├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd
+│   └── *BIGIP-14.1.0.5-0.0.5.vhd*
+└── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd.zip
+
+```
+
+As an example, your patched image could be uploaded directly to OpenStack Glance.
+
+```
+$ openstack image create --disk-format qcow2 --container-format bare --file /data/BIGIP-14.1/BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2/BIGIP-14.1.0.5-0.0.5.qcow2 OpenStack_BIGIP-14.1.0.5-0.0.5.LTM_1SLOT
 +------------------+------------------------------------------------------+
 | Field            | Value                                                |
 +------------------+------------------------------------------------------+
-| checksum         | c54ded7f5a17b57a041fb91b3924546f                     |
+| checksum         | 4929021d0f045eb91f928f4cf26aeca9                     |
 | container_format | bare                                                 |
-| created_at       | 2019-05-15T03:47:04Z                                 |
+| created_at       | 2019-05-29T23:23:29Z                                 |
 | disk_format      | qcow2                                                |
-| file             | /v2/images/0b3ee03d-267e-4f42-85c5-b5da3c9657a6/file |
-| id               | 0b3ee03d-267e-4f42-85c5-b5da3c9657a6                 |
+| file             | /v2/images/c8692af7-66a7-4dd0-8b0a-81506b0b3b74/file |
+| id               | c8692af7-66a7-4dd0-8b0a-81506b0b3b74                 |
 | min_disk         | 0                                                    |
 | min_ram          | 0                                                    |
-| name             | OpenStack_BIGIP-14.1.0.1-0.0.7.LTM_1SLOT             |
+| name             | OpenStack_BIGIP-14.1.0.5-0.0.5.LTM_1SLOT             |
 | owner            | 14910e1a2ed544f7aef81c5019d43f4a                     |
 | protected        | False                                                |
 | schema           | /v2/schemas/image                                    |
-| size             | 5061869568                                           |
+| size             | 5069668352                                           |
 | status           | active                                               |
 | tags             |                                                      |
-| updated_at       | 2019-05-15T03:53:20Z                                 |
+| updated_at       | 2019-05-29T23:24:14Z                                 |
 | virtual_size     | None                                                 |
 | visibility       | shared                                               |
 +------------------+------------------------------------------------------+
-removing patched image file from local disk
-```
 
 ```
-root@tmosimagebuilder:~/tmos-cloudinit# ./rebuild_qcow2_image.sh ./TMOSImages/BIGIP-14.1.0.1-0.0.7.ALL_1SLOT.qcow2 
-initializing imaging patching
-copying ./TMOSImages/BIGIP-14.1.0.1-0.0.7.ALL_1SLOT.qcow2 as base image for OpenStack_BIGIP-14.1.0.1-0.0.7.ALL_1SLOT.qcow2
-mounting OpenStack_BIGIP-14.1.0.1-0.0.7.ALL_1SLOT.qcow2 base image
-finding TMOS volume groups within base image
-patching cloud-init resources
-injecting python modules into python 2.7 system path
-injecting cloud-init.tmpl
-inserting iControl LX install packages
-injecting /root/tmos-cloudinit/iControlLXExtensions/f5-appsvcs-3.11.0-3.noarch.rpm
-injecting /root/tmos-cloudinit/iControlLXExtensions/f5-declarative-onboarding-1.4.0-1.noarch.rpm
-closing patched volumes
-uploading patched OpenStack_BIGIP-14.1.0.1-0.0.7.ALL_1SLOT.qcow2 to OpenStack
-+------------------+------------------------------------------------------+
-| Field            | Value                                                |
-+------------------+------------------------------------------------------+
-| checksum         | 4c7daf28602f84037dd1e17b7c2ea193                     |
-| container_format | bare                                                 |
-| created_at       | 2019-05-15T03:54:21Z                                 |
-| disk_format      | qcow2                                                |
-| file             | /v2/images/65446750-fc58-46d7-af93-3ff02ee08d9d/file |
-| id               | 65446750-fc58-46d7-af93-3ff02ee08d9d                 |
-| min_disk         | 0                                                    |
-| min_ram          | 0                                                    |
-| name             | OpenStack_BIGIP-14.1.0.1-0.0.7.ALL_1SLOT             |
-| owner            | 14910e1a2ed544f7aef81c5019d43f4a                     |
-| protected        | False                                                |
-| schema           | /v2/schemas/image                                    |
-| size             | 5123735552                                           |
-| status           | active                                               |
-| tags             |                                                      |
-| updated_at       | 2019-05-15T04:00:52Z                                 |
-| virtual_size     | None                                                 |
-| visibility       | shared                                               |
-+------------------+------------------------------------------------------+
-removing patched image file from local disk
-```
+
+Once your patched images are available to your virtualized environment, you can use cloudinit userdata to handle initial device and service provisioning.
+
 
 # Using F5 TMOS Cloudinit Modules #
 
