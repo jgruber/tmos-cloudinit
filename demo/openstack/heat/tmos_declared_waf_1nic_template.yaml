@@ -237,7 +237,8 @@ resources:
                     bigIqUsername: __bigiq_username__
                     bigIqPassword: __bigiq_password__
                     licensePool: __license_pool__
-                    reachable: true
+                    reachable: false
+                    hypervisor: kvm
                     bigIpUsername: admin
                     bigIpPassword: __admin_password__
                   dnsServers:
@@ -258,7 +259,7 @@ resources:
                     interfaces:
                       - name: 1.0
                         tagged: false
-                  self_1nic:
+                  internalSelfip:
                     class: SelfIp
                     address: __onenic_selfip__/__onenic_mask__
                     vlan: internal
@@ -266,7 +267,7 @@ resources:
                     trafficGroup: traffic-group-local-only
                   configsync:
                     class: ConfigSync
-                    configsyncIp: /Common/self_1nic/address
+                    configsyncIp: /Common/internalSelfip/address
                   default:
                     class: Route
                     gw: __default_gateway__

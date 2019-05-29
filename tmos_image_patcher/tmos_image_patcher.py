@@ -125,6 +125,7 @@ def convert_vmdk(image_file, variant):
     image_file = os.path.basename(image_file)
     LOG.warn('converting VMDK format to %s format', variant)
     os.chdir(convert_dir)
+    FNULL = open(os.devnull, 'w')
     subprocess.call(
         [
             VBOXMANAGE_CLI,
@@ -134,8 +135,10 @@ def convert_vmdk(image_file, variant):
             '--variant',
             variant,
             image_file,
-            'converted.vmdk'
-        ]
+            'converted.vmdk',
+        ],
+        stdout=FNULL,
+        stderr=subprocess.STDOUT
     )
     subprocess.call(['/bin/mv', '-f', 'converted.vmdk', image_file])
     os.chdir(start_directory)

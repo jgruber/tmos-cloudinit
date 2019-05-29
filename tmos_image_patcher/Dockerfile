@@ -16,6 +16,7 @@ RUN apt-get update && \
     python-jsonschema \
     python-yaml \
     python-pip \
+    python-setuptools \
     git
 
 RUN git clone https://github.com/jgruber/tmos-cloudinit.git
@@ -25,9 +26,10 @@ ENV LIBGUESTFS_BACKEND=direct
 
 VOLUME ["/TMOSImages", "/iControlLXPackages", "/TMOS_usr", "/TMOS_config"]
 
-ENV TMOS_IMAGE_DIR = '/TMOSImages'
-ENV TMOS_ICONTROLLX_DIR = '/iControlLXPackages'
-ENV TMOS_USR_INJECT_DIR = '/tmos-cloudinit/image_patch_files/usr'
+ENV TMOS_IMAGE_DIR '/TMOSImages'
+ENV TMOS_ICONTROLLX_DIR '/iControlLXPackages'
+ENV TMOS_USR_INJECT_DIR '/tmos-cloudinit/image_patch_files/usr'
+ENV USER 'root'
 
-ENTRYPOINT [ "/tmos-cloudinit/tmos_image_patcher.py" ]
+ENTRYPOINT [ "/tmos-cloudinit/tmos_image_patcher/tmos_image_patcher.py" ]
 
