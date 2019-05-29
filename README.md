@@ -83,7 +83,7 @@ $ docker run --rm -it -v /data/BIGIP-14.1:/TMOSImages -v /data/iControlLXLatestB
 Each TMOS image archive will be explaned into a folder containing your newly patched image. The image will be in the same format as the original. You can utilize your patched images just as you would the originals.
 
 
-$ tree /data/BIGIP-14.1
+> $ tree /data/BIGIP-14.1
 /data/BIGIP-14.1
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide
 │   └── **BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova**
