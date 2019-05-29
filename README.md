@@ -86,28 +86,28 @@ Each TMOS image archive will be explaned into a folder containing your newly pat
 > $ tree /data/BIGIP-14.1
 /data/BIGIP-14.1
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide
-│   └── **BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova</b>
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-ide.ova
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.qcow2
-│   └── **BIGIP-14.1.0.5-0.0.5.qcow2**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.qcow2</b>
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.qcow2.zip
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi
-│   └── **BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi.ova**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi.ova</b>
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT-scsi.ova
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.vhd
-│   └── **BIGIP-14.1.0.5-0.0.5.vhd**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.vhd</b>
 ├── BIGIP-14.1.0.5-0.0.5.ALL_1SLOT.vhd.zip
 ├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide
-│   └── **BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide.ova**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide.ova</b>
 ├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-ide.ova
 ├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2
-│   └── **BIGIP-14.1.0.5-0.0.5.qcow2**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.qcow2</b>
 ├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2.zip
 ├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi
-│   └── **BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi.ova**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi.ova</b>
 ├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT-scsi.ova
 ├── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd
-│   └── **BIGIP-14.1.0.5-0.0.5.vhd**
+│   └── <b>BIGIP-14.1.0.5-0.0.5.vhd</b>
 └── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd.zip
 </pre>
 
