@@ -122,14 +122,20 @@ def build_configdrive_from_files(userdata_file=None, configdrive_file=None,
     if metadata_file:
         with open(metadata_file) as md_file:
             metadata = md_file.read()
+            LOG.info(
+                'building ISO9660 configdrive meta_data.json from %s', metadata_file)
     vendordata = None
     if vendordata_file:
         with open(vendordata_file) as vd_file:
             vendordata = vd_file.read()
+            LOG.info(
+                'building ISO9660 configdrive vendor_data.json from %s', vendordata_file)
     networkdata = None
     if networkdata_file:
         with open(networkdata_file) as nd_file:
             networkdata = nd_file.read()
+            LOG.info(
+                'building ISO9660 configdrive network_data.json from %s', networkdata_file)
     return create_configdrive(userdata, configdrive_file, metadata, vendordata, networkdata)
 
 
@@ -158,12 +164,16 @@ def build_configdrive_from_decs(do_declaration_file=None,
         }
     }
     if do_obj:
+        LOG.info('adding f5-declarative-onboarding declaration to user_data')
         userdata_obj['tmos_declared']['do_declaration'] = do_obj
     if as3_obj:
+        LOG.info('adding f5-appsvcs-extensions declaration to user_data')
         userdata_obj['tmos_declared']['as3_declaration'] = as3_obj
     if phone_home_url:
+        LOG.info('adding phone_home_url to user_data')
         userdata_obj['tmos_declared']['phone_home_url'] = phone_home_url
     if phone_home_cli:
+        LOG.info('adding phone_home_cli to user_data')
         userdata_obj['tmos_declared']['phone_home_cli'] = phone_home_cli
     userdata = to_yaml(userdata_obj)
     userdata = "#cloud-config\n%s" % userdata
@@ -206,7 +216,7 @@ if __name__ == "__main__":
         'CONFIGDRIVE_FILE', '/configdrives/configdrive.iso')
 
     if os.path.exists(USERDATA_FILE):
-        LOG.info('building ISO9660 configdrive from %s', USERDATA_FILE)
+        LOG.info('building ISO9660 configdrive user_data from %s', USERDATA_FILE)
         if not os.path.exists(METADATA_FILE):
             METADATA_FILE = None
         if not os.path.exists(VENDORDATA_FILE):

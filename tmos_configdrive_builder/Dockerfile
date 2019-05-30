@@ -20,9 +20,7 @@ ENV LIBGUESTFS_BACKEND=direct
 
 VOLUME ["/declarations", "/configdrives"]
 
-ENV DECLARATION_DIR '/TMOSImages'
-ENV CONFIGDRIVE_DIR '/iControlLXPackages'
 ENV USER 'root'
 
-# ENTRYPOINT [ "/tmos-cloudinit/tmos_configdrive_builder/tmos_configdrive_builder.py" ]
+ENTRYPOINT [ "/tmos-cloudinit/tmos_configdrive_builder/tmos_configdrive_builder.py" ]
 
