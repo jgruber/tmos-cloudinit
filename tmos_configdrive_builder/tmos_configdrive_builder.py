@@ -25,6 +25,8 @@ import os
 import sys
 import logging
 import tempfile
+import json
+import uuid
 import yaml
 
 import pycdlib
@@ -124,6 +126,18 @@ def build_configdrive_from_files(userdata_file=None, configdrive_file=None,
             metadata = md_file.read()
             LOG.info(
                 'building ISO9660 configdrive meta_data.json from %s', metadata_file)
+            try:
+                metadata_obj = json.loads(metadata)
+                if not 'uuid' in metadata_obj:
+                    LOG.info('generating OpenStack mandatory ID')
+                    metadata_obj['uuid'] = str(uuid.uuid4())
+                    metadata = json.dumps(metadata_obj)
+            except ValueError as value_error:
+                LOG.error('metadata file is not JSON: %s', value_error)
+                sys.exit(1)
+    else:
+        LOG.info('generating OpenStack mandatory ID')
+        metadata = json.dumps({'uuid': str(uuid.uuid4())})
     vendordata = None
     if vendordata_file:
         with open(vendordata_file) as vd_file:
@@ -177,7 +191,11 @@ def build_configdrive_from_decs(do_declaration_file=None,
         userdata_obj['tmos_declared']['phone_home_cli'] = phone_home_cli
     userdata = to_yaml(userdata_obj)
     userdata = "#cloud-config\n%s" % userdata
-    return create_configdrive(userdata, configdrive_file, None, None, None)
+
+    LOG.info('generating OpenStack mandatory ID')
+    metadata = json.dumps({'uuid': str(uuid.uuid4())})
+
+    return create_configdrive(userdata, configdrive_file, metadata, None, None)
 
 
 def load_declaration(string):
