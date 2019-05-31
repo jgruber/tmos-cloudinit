@@ -269,7 +269,7 @@ This cloudinit module writes and executes onboarding scripts in the `/config/clo
 | phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
 
 
-### usage ###
+### userdata usage ###
 
 ```
 #cloud-config
@@ -298,6 +298,7 @@ tmos_static_mgmt:
 ```
 
 ## tmos_configdrive_openstack ##
+
 This cloudinit module requries the use of a ConfigDrive data source and OpenStack file formatted meta_data.json and network_data.json metadata files. This module extents TMOS functionality to include static provisioning off all interfaces (manaement and TMM) via either network metadata or the use of DHCPv4. This interface includes the ability to augment the configuration data retrieved via metadata and DHCP with additional f5-declarative-onboarding and f5-appsvc-3 declarations. Any supplied f5-declarative-onboarding declarations will overwrite or be merged with configuration declarations defined via metadata resource resolution. This modules support both 1NIC and nNIC deployments.
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
@@ -332,6 +333,8 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 SSH keys found in the OpenStack meta_data.json file will also be injected as authorized_keys for the root account.
 
 If f5-declarative-onboarding is disbaled, done by setting `do_eabled` to false, the device onboarding configuration will contine as described in the OpenStack meta_data.json and network_data.json files. f5-appsvcs-extension declarations can be applied with or without f5-declarative-onboarding being enabled.
+
+### userdata usage ###
 
 ```
 #cloud-config
@@ -415,6 +418,8 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 
 If f5-declarative-onboarding is disbaled, done by setting `do_eabled` to false, the device onboarding configuration will contine as described in the OpenStack meta_data.json and network_data.json files. f5-appsvcs-extension declarations can be applied with or without f5-declarative-onboarding being enabled.
 
+### userdata usage ###
+
 ```
 #cloud-config
 tmos_dhcp_tmm:
@@ -473,6 +478,8 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | as3_declaration | none | The f5-appsvcs-extension declaration to declare if enabled |
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
 | phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
+
+### userdata usage ###
 
 ```
 #cloud-config
@@ -617,7 +624,11 @@ The `phone_home_url` must take a `POST` reqeust. The `POST` body will be a JSON 
 
 The `phone_home_cli` will only be called if the module runs succesfully, to the degree the provisioning can be synchronized. The `phone_home_cli` command execution allows for OpenStack Heat and AWS CFT type wait condition resources to be use with their auto generated curl CLI notifications.
 
+### Things You Can Add to Your Userdata ###
+
 In addition to the delcared elements, this module also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
+
+### additional userdata ###
 
 ```
 #cloud-config
