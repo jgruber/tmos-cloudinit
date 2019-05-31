@@ -146,7 +146,7 @@ Once your patched images are available to your virtualized environment, you can 
 
 While IaaS clouds already support mechanisms to supply cloudinit userdata to declare guest instances configurations, TMOS VE is supported in sparser virtualization environments which might not. For those environments, an ISO CDROM image can be attached to TMOS VE guest prior to booting it. If the ISO CDROM image is properly formatted as a cloudinit ConfigDrive data source, cloudinit modules can still be used.
 
-As an example, VMWare Workstation can be use to create an TMOS VE instance from a patched TMOS OVA archive. It will suitably build the instance attributes per the F5 defined OVF, but will then wait for the end user to start the instance. Prior to starting the instance, the user can add an IDE CDROM drivce device and attach a ConfigDrive ISO file.
+As an example, VMWare Workstation can be use to create a TMOS VE instance from a patched TMOS OVA archive. It will suitably build the instance attributes per the F5 defined OVF, but will then wait for the end user to start the instance. Prior to starting the instance, the user can add an IDE CDROM drivce device and attach a ConfigDrive ISO file.
 
 TMOS supports cloudinit OpenStack ConfigDrive. The ISO CDROM attached has to have a volume lable of `config-2` and must follow a specific layout of files, containing a specific JSON file with a specific attribute defined.
 
