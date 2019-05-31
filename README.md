@@ -181,7 +181,8 @@ The script was designed to take inputs as environment variables, rather then com
 
 The CDROM is built to be use in two modes:
 
-1. `tmos_declared` mode - which builds f5-declarative-onboarding and optionally f5-appsvcs-extensions declarations, and optionally `phone_home_url` and `phone_home_cli` variables into a CDROM ISO usable with the `tmos_declared` module defined below.
+1. `tmos_declared` mode - which builds f5-declarative-onboarding and optionally f5-appsvcs-extensions declarations, `phone_home_url` and `phone_home_cli` variables, into a CDROM ISO usable with the `tmos_declared` cloudinit module.
+
 2. Fully explicit mode - which builds a CDROM ISO from a fully defined set of `user_data`, and optionally `meta_data.json`, `vendor_data.json`, and `network_data.json` files. This allows for the construction of any settings in your `user_data` you want. This can be used to work with any of the modules defined in this repository.
 
 #### tmos_declared Mode Environment Variables and Files ####
