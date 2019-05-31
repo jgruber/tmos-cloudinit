@@ -211,7 +211,7 @@ ls ./configdrive.iso
 configdrive.iso
 ```
 
-If you are not comfortable with, or cant use bash expansion, just fully defined you file paths.
+If you are not comfortable with, or can not use bash expansion, just fully defined your file paths.
 
 To define `phone_home_url` or `phone_home_cli` attributes in your `tmos_declared` declaration, simply add them as Docker environment variables.
 
