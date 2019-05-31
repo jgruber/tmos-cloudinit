@@ -45,19 +45,19 @@ f5-appsvcs-3.11.0-3.noarch.rpm
 f5-declarative-onboarding-1.4.0-1.noarch.rpm
 ```
 
-## Note: do not remove the disk images from their archive containers (zip or ova) ##
+#### Note: do not remove the disk images from their archive containers (zip or ova) ####
 
 You can build the docker image from the `tmos_image_patcher` Dockerfile.
 
 ```
-$ docker build -t tmos_image_patcher:1.0 tmos_image_patcher
+$ docker build -t tmos_image_patcher:latest tmos_image_patcher
 ```
 
 After the build process completes, you should have a docker image available to you locally.
 
 ```
 $ docker images | grep tmos_image_patcher
-tmos_image_patcher    1.0    3416ed456cfe    22 seconds ago    1.38GB
+tmos_image_patcher    latest    3416ed456cfe    22 seconds ago    1.38GB
 ```
 
 Patched images can then be build by creating a `tmos_image_builder` docker instance based on your image.
@@ -66,7 +66,7 @@ Make sure you create the mounts as specified below. Your TMOS image archives fol
 iControl LX extensions you want injected into your image shuld be mounted to the instances' `/iControlLXPackages` directory.
 
 ```
-$ docker run --rm -it -v /data/BIGIP-14.1:/TMOSImages -v /data/iControlLXLatestBuild:/iControlLXPackages tmos_image_patcher:1.0
+$ docker run --rm -it -v /data/BIGIP-14.1:/TMOSImages -v /data/iControlLXLatestBuild:/iControlLXPackages tmos_image_patcher
 
 2019-05-29 22:43:48,133 - tmos_image_patcher - DEBUG - process start time: Wednesday, May 29, 2019 10:43:48
 2019-05-29 22:43:48,133 - tmos_image_patcher - INFO - Scanning for images in: /TMOSImages
@@ -142,6 +142,105 @@ $ openstack image create --disk-format qcow2 --container-format bare --file /dat
 
 Once your patched images are available to your virtualized environment, you can use cloudinit userdata to handle initial device and service provisioning.
 
+## Creating OpenStack Formatted Cloudinit ConfigDrive ISOs Using a Docker Instance ##
+
+While IaaS clouds already support mechanisms to supply cloudinit userdata to declare guest instances configurations, TMOS VE is supported in sparser virtualization environments which might not. For those environments, an ISO CDROM image can be attached to TMOS VE guest prior to booting it. If the ISO CDROM image is properly formatted as a cloudinit ConfigDrive data source, cloudinit modules can still be used.
+
+As an example, VMWare Workstation can be use to create an TMOS VE instance from a patched TMOS OVA archive. It will suitably build the instance attributes per the F5 defined OVF, but will then wait for the end user to start the instance. Prior to starting the instance, the user can add an IDE CDROM drivce device and attach a ConfigDrive ISO file.
+
+TMOS supports cloudinit OpenStack ConfigDrive. The ISO CDROM attached has to have a volume lable of `config-2` and must follow a specific layout of files, containing a specific JSON file with a specific attribute defined.
+
+<pre>
+/iso (volume label config-2)
+└── openstack
+    └── latest
+        ├── meta_data.json
+        ├───────────────────> {"uuid": "a7481585-ee3f-432b-9f7e-ddc7e5b02c27"}
+        ├── user_data
+        └───────────────────> THIS CAN CONTAIN ANY USERDATA YOU WANT
+</pre>
+
+If you generate an ISO9660 files system with Rock Ridge extensions to allow TMOS cloudinit to mount your device and act on your userdata, you can treat any virtualization environment like a properly declared IaaS. You can use any ISO9660 filesystem generation tool you want, as long as it conforms to the standard for the OpenStack ConfigDrive cloudinit data source.
+
+This repository includes a Dockerfile and an ISO9660 generation script which will create the appropriate CDROM ISO image file provided proper inputs. 
+
+You can build the docker image from the `tmos_configdrive_builder` Dockerfile.
+
+```
+$ docker build -t tmos_configdrive_builder:latest tmos_configdrive_builder
+```
+
+After the build process completes, you should have a docker image available to you locally.
+
+```
+$ docker images|grep tmos_configdrive_builder
+tmos_configdrive_builder     latest     23c1d99efdd5     17 seconds ago     274MB
+```
+
+The script was designed to take inputs as environment variables, rather then command line arguments, to make use via `docker` easier for the end user. Any content, like your declarations or whole JSON dictionaries, are made available via files in specific directories. This too was done to make them available to Docker instances via volume mounts.
+
+The CDROM is built to be use in two modes:
+
+1. `tmos_declared` mode - which builds f5-declarative-onboarding and optionally f5-appsvcs-extensions declarations, and optionally `phone_home_url` and `phone_home_cli` variables into a CDROM ISO usable with the `tmos_declared` module defined below.
+2. Fully explicit mode - which builds a CDROM ISO from a fully defined set of `user_data`, and optionally `meta_data.json`, `vendor_data.json`, and `network_data.json` files. This allows for the construction of any settings in your `user_data` you want. This can be used to work with any of the modules defined in this repository.
+
+#### tmos_declared Mode Environment Variables and Files ####
+
+Here is a list of environment variables to set which will determine how CDROM ISO is built:
+
+| Environment Variable | Required | Default | Description|
+| --------------------- | ----- | ---------- | ---------------|
+| DO_DECLARATION_FILE   | Yes | /declarations/do_declaration.json | Your f5-declarative-onboarding declaration in a text file. The declaration can be in JSON or YAML format. |
+| AS3_DECLARATION_FILE  | No | /declarations/as3_declaration.json | Your f5-appsvcs-extension declaration in a text file. The declaration can be in JSON or YAML format. |
+| PHOME_HOME_URL | No | None | The URL to use as the `phone_home_url` attributed of the `tmos_declared` declaration. |
+| PHOME_HOME_CLI | No | None | The URL to use as the `phone_home_url` attributed of the `tmos_declared` declaration. |
+| CONFIGDRIVE_FILE | Yes | /configdrives/configdrive.iso | The output ISO file. |
+
+The files specified above must be available to the Docker instance, so should be the volume mount paths as seen from within the Docker instance.
+
+If you have a local subfolder `declarations` directory containing both `do_declaration.json` and `as3_declaration.json`, you could create your basic CDROM ISO in the current directory wih the following bash shell command.
+
+```
+docker run --rm -it -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_config_builder
+2019-05-30 20:00:59,009 - tmos_image_patcher - INFO - building ISO9660 for tmos_declared module with declarations
+2019-05-30 20:00:59,029 - tmos_image_patcher - INFO - adding f5-declarative-onboarding declaration to user_data
+2019-05-30 20:00:59,029 - tmos_image_patcher - INFO - adding f5-appsvcs-extensions declaration to user_data
+2019-05-30 20:00:59,042 - tmos_image_patcher - INFO - generating OpenStack mandatory ID
+2019-05-30 20:00:59,046 - tmos_image_patcher - INFO - output IS09660 file: /configdrives/configdrive.iso
+ls ./configdrive.iso
+configdrive.iso
+```
+
+If you are not comfortable with, or cant use bash expansion, just fully defined you file paths.
+
+To define `phone_home_url` or `phone_home_cli` attributes in your `tmos_declared` declaration, simply add them as Docker environment variables.
+
+```
+docker run --rm -it -e PHONE_HOME_URL=https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93 -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_config_builder
+```
+
+#### Explicit Mode Environment Variables and Files ####
+
+If the script has a `USERDATA_FILE` or finds a `/declarations/user_data` file, it will automatically prefer explicit mode. 
+
+The other defined optional files `METADATA_FILE`, `VENDORDATA_FILE`, and `NETWORKDATA_FILE`, should conform to the OpenStack metadata standards for use with cloudinit.
+
+| Environment Variable | Required | Default | Description|
+| --------------------- | ----- | ---------- | ---------------|
+| USERDATA_FILE   | Yes | /declarations/user_data | Your fully defined user_data to include. |
+| METADATA_FILE   | NO | /declarations/meta_data.json | Your fully defined instance meta_data to include in JSON format. |
+| VENDOR_FILE   | NO | /declarations/vendor_data.json | Your fully defined instance vendor_data to include in JSON format. |
+| NETWORKDATA_FILE   | NO | /declarations/network_data.json | Your fully defined instance network_data to include in JSON format. |
+| CONFIGDRIVE_FILE | Yes | /configdrives/configdrive.iso | The output ISO file. |
+
+```
+docker run --rm -it -e USERDATA_FILE=/declarations/instance2224 -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_config_builder
+2019-05-30 20:04:12,158 - tmos_image_patcher - INFO - building ISO9660 configdrive user_data from /declarations/instance2224
+2019-05-30 20:04:12,158 - tmos_image_patcher - INFO - generating OpenStack mandatory ID
+2019-05-30 20:04:12,163 - tmos_image_patcher - INFO - output IS09660 file: /configdrives/configdrive.iso
+ls ./configdrive.iso
+configdrive.iso
+```
 
 # Using F5 TMOS Cloudinit Modules #
 
