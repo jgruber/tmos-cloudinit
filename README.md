@@ -229,9 +229,9 @@ The other defined optional files `METADATA_FILE`, `VENDORDATA_FILE`, and `NETWOR
 | Environment Variable | Required | Default | Description|
 | --------------------- | ----- | ---------- | ---------------|
 | USERDATA_FILE   | Yes | /declarations/user_data | Your fully defined user_data to include. |
-| METADATA_FILE   | NO | /declarations/meta_data.json | Your fully defined instance meta_data to include in JSON format. |
-| VENDOR_FILE   | NO | /declarations/vendor_data.json | Your fully defined instance vendor_data to include in JSON format. |
-| NETWORKDATA_FILE   | NO | /declarations/network_data.json | Your fully defined instance network_data to include in JSON format. |
+| METADATA_FILE   | No | /declarations/meta_data.json | Your fully defined instance meta_data to include in JSON format. |
+| VENDOR_FILE   | No | /declarations/vendor_data.json | Your fully defined instance vendor_data to include in JSON format. |
+| NETWORKDATA_FILE   | No | /declarations/network_data.json | Your fully defined instance network_data to include in JSON format. |
 | CONFIGDRIVE_FILE | Yes | /configdrives/configdrive.iso | The output ISO file. |
 
 ```
