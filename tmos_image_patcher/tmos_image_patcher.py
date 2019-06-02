@@ -61,7 +61,7 @@ def patch_images(tmos_image_dir, tmos_cloudinit_dir,
                 if usr_dev and tmos_cloudinit_dir:
                     update_cloudinit = os.getenv('UPDATE_CLOUDINIT', default="true")
                     if update_cloudinit == "true":
-                        update_cloudinit(tmos_cloudinit_dir)
+                        update_cloudinit_modules(tmos_cloudinit_dir)
                     inject_cloudinit_modules(
                         disk_image, tmos_cloudinit_dir, usr_dev)
                 if usr_dev and tmos_usr_inject_dir:
