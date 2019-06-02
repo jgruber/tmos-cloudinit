@@ -59,6 +59,9 @@ def patch_images(tmos_image_dir, tmos_cloudinit_dir,
             (is_tmos, config_dev, usr_dev) = validate_tmos_device(disk_image)
             if is_tmos:
                 if usr_dev and tmos_cloudinit_dir:
+                    update_cloudinit = os.getenv('UPDATE_CLOUDINIT', default="true"):
+                    if update_cloudinit == "true":
+                        update_cloudinit(tmos_cloudinit_dir)
                     inject_cloudinit_modules(
                         disk_image, tmos_cloudinit_dir, usr_dev)
                 if usr_dev and tmos_usr_inject_dir:
@@ -97,7 +100,8 @@ def scan_for_images(tmos_image_dir):
                 if os.path.splitext(extracted_file)[1] in IMAGE_TYPES:
                     image_filepath = "%s/%s" % (extract_dir, extracted_file)
                     if os.path.splitext(extracted_file)[1] == '.vmdk':
-                        convert_vmdk(image_filepath, VBOXMANAGE_CLI_PATCH_VARIANT)
+                        convert_vmdk(image_filepath,
+                                     VBOXMANAGE_CLI_PATCH_VARIANT)
                     return_image_files.append(image_filepath)
     return return_image_files
 
@@ -179,8 +183,10 @@ def clean_ovf(ovf_file_path):
     """Remove OVF references to proprietary image"""
     working_dir = os.path.dirname(ovf_file_path)
     file_name = os.path.basename(ovf_file_path)
-    os.rename(ovf_file_path, os.path.join(working_dir, "%s.backup" % file_name))
-    original_ovf = open(os.path.join(working_dir, "%s.backup" % file_name), 'r')
+    os.rename(ovf_file_path, os.path.join(
+        working_dir, "%s.backup" % file_name))
+    original_ovf = open(os.path.join(
+        working_dir, "%s.backup" % file_name), 'r')
     new_ovf = open(ovf_file_path, 'w')
     for line in original_ovf:
         if 'ovf:size' in line:
@@ -218,6 +224,22 @@ def validate_tmos_device(disk_image):
     gfs.close()
     wait_for_gfs(gfs)
     return (is_tmos, config_dev, usr_dev)
+
+
+def update_cloudinit_modules(tmos_cloudinit_dir):
+    """Get latest cloudinit"""
+    start_directory = os.getcwd()
+    os.chdir(tmos_cloudinit_dir)
+    FNULL = open(os.devnull, 'w')
+    subprocess.call(
+        [
+            'git',
+            'pull'
+        ],
+        stdout=FNULL,
+        stderr=subprocess.STDOUT
+    )
+    os.chdir(start_directory)
 
 
 def inject_cloudinit_modules(disk_image, tmos_cloudinit_dir, dev):
