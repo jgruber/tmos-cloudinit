@@ -228,6 +228,7 @@ def validate_tmos_device(disk_image):
 
 def update_cloudinit_modules(tmos_cloudinit_dir):
     """Get latest cloudinit"""
+    LOG.info('pulling latest cloudinit modules')
     start_directory = os.getcwd()
     os.chdir(tmos_cloudinit_dir)
     FNULL = open(os.devnull, 'w')
