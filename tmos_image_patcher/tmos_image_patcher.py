@@ -231,15 +231,11 @@ def update_cloudinit_modules(tmos_cloudinit_dir):
     LOG.info('pulling latest cloudinit modules')
     start_directory = os.getcwd()
     os.chdir(tmos_cloudinit_dir)
-    FNULL = open(os.devnull, 'w')
-    subprocess.call(
-        [
-            'git',
-            'pull'
-        ],
-        stdout=FNULL,
-        stderr=subprocess.STDOUT
-    )
+    gitout = subprocess.Popen(
+        "git pull",
+        stdout=subprocess.PIPE, shell=True
+    ).communicate()[0].split('\n')
+    LOG.info('git returned: %s', gitout)
     os.chdir(start_directory)
 
 
