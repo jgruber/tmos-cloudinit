@@ -240,7 +240,7 @@ There are two mount paths the configdrive ISO builder script expects to have ava
 | /declarations   | Yes | Path to the directory containing your declarations |
 | /configdrives   | Yes | Path to the directory to write your ISO files |
 
-As an example, to create an `configdrive.iso` file in the current directory taking declarations files from the `./declarations` directory, the Docker `run` syntax would look like the following.
+As an example, to create an `configdrive.iso` file in the current directory which would creeate metadata for the `tmos_declared` cloudint module, taking declarations files from the `./declarations` directory, while explicitly defining a `phone_home_url`, the Docker `run` syntax would look like the following.
 
 
 ```
