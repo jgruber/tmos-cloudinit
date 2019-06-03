@@ -66,7 +66,7 @@ Make sure you create the mounts as specified below. Your TMOS image archives fol
 iControl LX extensions you want injected into your image shuld be mounted to the instances' `/iControlLXPackages` directory.
 
 | Docker Volume Mount | Required | Description |
-| --------------------- | ----- | ---------- | --------------- |
+| --------------------- | ----- | ---------- |
 | /TMOSImages   | Yes | Path to the directory with the TMOS Virtual Edition archives to patch |
 | /iControlLXPackages   | No | Path to the directory with optional iControl LX RPM packages to inject into the images |
 
