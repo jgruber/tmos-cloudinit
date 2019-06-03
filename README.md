@@ -65,6 +65,19 @@ Patched images can then be build by creating a `tmos_image_builder` docker insta
 Make sure you create the mounts as specified below. Your TMOS image archives folder should be mounted as a volume to `/TMOSImages` and any 
 iControl LX extensions you want injected into your image shuld be mounted to the instances' `/iControlLXPackages` directory.
 
+| Docker Volume Mount | Required | Description|
+| --------------------- | ----- | ---------- | ---------------|
+| /TMOSImages   | Yes | Path to the directory with the TMOS Virtual Edition archives to patch |
+| /iControlLXPackages   | No | Path to the directory with optional iControl LX RPM packages to inject into the images |
+
+#### Example Mounts ####
+
+`
+-v /data/BIGIP-14.1:/TMOSImages -v /data/iControlLXLatestBuild:/iControlLXPackages
+`
+
+You can run the image patch script as a Docker contianer with the Docker `run` command.
+
 ```
 $ docker run --rm -it -v /data/BIGIP-14.1:/TMOSImages -v /data/iControlLXLatestBuild:/iControlLXPackages tmos_image_patcher
 
