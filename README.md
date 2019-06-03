@@ -62,6 +62,8 @@ tmos_image_patcher    latest    3416ed456cfe    22 seconds ago    1.38GB
 
 Patched images can then be build by creating a `tmos_image_builder` docker instance based on your image.
 
+#### Expected Docker Volume Mounts ####
+
 Make sure you create the mounts as specified below. Your TMOS image archives folder should be mounted as a volume to `/TMOSImages` and any 
 iControl LX extensions you want injected into your image shuld be mounted to the instances' `/iControlLXPackages` directory.
 
@@ -228,6 +230,18 @@ configdrive.iso
 If you are not comfortable with, or can not use bash expansion, just fully defined your file paths.
 
 To define `phone_home_url` or `phone_home_cli` attributes in your `tmos_declared` declaration, simply add them as Docker environment variables.
+
+#### Expected Docker Volume Mounts ####
+
+There are two mount paths the configdrive ISO builder script expects to have available. One is a file path to your declarations, either default or explicitly defined by environment variables. The other is the directory to write your ISO file.
+
+| Docker Volume Mount | Required | Description |
+| --------------------- | ----- | ---------- |
+| /declarations   | Yes | Path to the directory containing your declarations |
+| /configdrives   | Yes | Path to the directory to write your ISO files |
+
+As an example, to create an `configdrive.iso` file in the current directory taking declarations files from the `./declarations` directory, the Docker `run` syntax would look like the following.
+
 
 ```
 docker run --rm -it -e PHONE_HOME_URL=https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93 -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_config_builder
