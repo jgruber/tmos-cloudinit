@@ -163,7 +163,7 @@ While IaaS clouds already support mechanisms to supply cloudinit userdata to dec
 
 As an example, VMWare Workstation can be use to create a TMOS VE instance from a patched TMOS OVA archive. It will suitably build the instance attributes per the F5 defined OVF, but will then wait for the end user to start the instance. Prior to starting the instance, the user can add an IDE CDROM drivce device and attach a ConfigDrive ISO file.
 
-TMOS supports cloudinit OpenStack ConfigDrive. The ISO CDROM attached has to have a volume lable of `config-2` and must follow a specific layout of files, containing a specific JSON file with a specific attribute defined.
+TMOS supports cloudinit OpenStack ConfigDrive. The ISO CDROM attached has to have a volume label of `config-2` and must follow a specific layout of files, containing a specific JSON file with a specific attribute defined.
 
 <pre>
 /iso (volume label config-2)
