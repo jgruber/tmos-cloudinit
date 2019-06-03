@@ -217,7 +217,7 @@ The files specified above must be available to the Docker instance, so should be
 If you have a local subfolder `declarations` directory containing both `do_declaration.json` and `as3_declaration.json`, you could create your basic CDROM ISO in the current directory wih the following bash shell command.
 
 ```
-docker run --rm -it -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_config_builder
+docker run --rm -it -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_configdrive_builder
 2019-05-30 20:00:59,009 - tmos_image_patcher - INFO - building ISO9660 for tmos_declared module with declarations
 2019-05-30 20:00:59,029 - tmos_image_patcher - INFO - adding f5-declarative-onboarding declaration to user_data
 2019-05-30 20:00:59,029 - tmos_image_patcher - INFO - adding f5-appsvcs-extensions declaration to user_data
@@ -244,7 +244,7 @@ As an example, to create an `configdrive.iso` file in the current directory whic
 
 
 ```
-docker run --rm -it -e PHONE_HOME_URL=https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93 -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_config_builder
+docker run --rm -it -e PHONE_HOME_URL=https://webhook.site/5f8cd8a7-b051-4648-9296-8f6afad34c93 -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_configdrive_builder
 ```
 
 #### Explicit Mode Environment Variables and Files ####
@@ -262,7 +262,7 @@ The other defined optional files `METADATA_FILE`, `VENDORDATA_FILE`, and `NETWOR
 | CONFIGDRIVE_FILE | Yes | /configdrives/configdrive.iso | The output ISO file. |
 
 ```
-docker run --rm -it -e USERDATA_FILE=/declarations/instance2224 -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_config_builder
+docker run --rm -it -e USERDATA_FILE=/declarations/instance2224 -v $(pwd)/declarations:/declarations -v $(pwd):/configdrives tmos_configdrive_builder
 2019-05-30 20:04:12,158 - tmos_image_patcher - INFO - building ISO9660 configdrive user_data from /declarations/instance2224
 2019-05-30 20:04:12,158 - tmos_image_patcher - INFO - generating OpenStack mandatory ID
 2019-05-30 20:04:12,163 - tmos_image_patcher - INFO - output IS09660 file: /configdrives/configdrive.iso
