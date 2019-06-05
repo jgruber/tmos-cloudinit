@@ -274,7 +274,7 @@ configdrive.iso
 
 The modules all include an `enabled` attribute which must be set to `true` for any onboard configuration to take place. For the most part these modules are mutually exclusive from each other, meaning you should only use the one that fits your deployment environment.
 
-All modules log to the common `/config/cloud/f5-cloudinit.log` log file. 
+All modules log to the common `/var/log/f5-cloudinit.log` log file. 
 
 ## tmos_static_mgmt ##
 
