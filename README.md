@@ -280,7 +280,7 @@ All modules log to the common `/var/log/f5-cloudinit.log` log file.
 
 This cloudinit module extents TMOS to allow for static address assignment provided through cloudinit userdata.
 
-This cloudinit module writes and executes onboarding scripts in the `/config/cloud/tmos_static_mgmt` directory.
+This cloudinit module writes and executes onboarding scripts in the `/var/lib/cloud/tmos_static_mgmt` directory.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
@@ -330,11 +330,11 @@ This cloudinit module requries the use of a ConfigDrive data source and OpenStac
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
-This cloudinit module writes and executes onboarding scripts in the `/config/cloud/openstack` directory.
+This cloudinit module writes and executes onboarding scripts in the `/var/lib/cloud/openstack` directory.
 
-This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
+This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/var/lib/cloud/f5-declarative-onboarding` directory.
 
-This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/config/cloud/f5-appsvcs-extension` directory.
+This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/var/lib/cloud/f5-appsvcs-extension` directory.
 
 
 | Module Attribute | Default | Description|
@@ -417,11 +417,11 @@ This cloudinit module resolves configuration data for all interfaces (management
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
-This cloudinit module writes and executes onboarding scripts in the `/config/cloud/tmos_dhcpv4_tmm` directory.
+This cloudinit module writes and executes onboarding scripts in the `/var/lib/cloud/tmos_dhcpv4_tmm` directory.
 
-This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
+This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/var/lib/cloud/f5-declarative-onboarding` directory.
 
-This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/config/cloud/f5-appsvcs-extension` directory.
+This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/var/lib/cloud/f5-appsvcs-extension` directory.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
@@ -493,9 +493,9 @@ This module assumes the management interface provisioning completes via the defa
 
 The declarations must be coherent with the deployment environment. As an example, the f5-declarative-onboarding declaration would need to include the `internal` VLAN and the `self_1nic` SelfIP classes to properly declare a 1NIC deployment.
 
-This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/config/cloud/f5-declarative-onboarding` directory.
+This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/var/lib/cloud/f5-declarative-onboarding` directory.
 
-This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/config/cloud/f5-appsvcs-extension` directory.
+This cloudinit module optionally composes f5-appsvcs-extension declarations in the `/var/lib/cloud/f5-appsvcs-extension` directory.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
