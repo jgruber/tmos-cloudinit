@@ -19,6 +19,7 @@ RUN apt-get update && \
     python-setuptools \
     git
 
+## INJECT_PATCH_INSTRUCTION ##
 RUN git clone https://github.com/jgruber/tmos-cloudinit.git
 RUN pip install pycdlib
 

@@ -51,24 +51,32 @@ LOG.addHandler(LOGSTREAM)
 
 
 def patch_images(tmos_image_dir, tmos_cloudinit_dir,
-                 tmos_usr_inject_dir, tmos_config_inject_dir,
+                 tmos_usr_inject_dir, tmos_var_inject_dir,
+                 tmos_config_inject_dir, tmos_shared_inject_dir,
                  tmos_icontrollx_dir):
     """Patch TMOS classic disk image"""
     if tmos_image_dir and os.path.exists(tmos_image_dir):
         for disk_image in scan_for_images(tmos_image_dir):
-            (is_tmos, config_dev, usr_dev) = validate_tmos_device(disk_image)
+            (is_tmos, config_dev, usr_dev, var_dev, shared_dev) = \
+                validate_tmos_device(disk_image)
             if is_tmos:
                 if usr_dev and tmos_cloudinit_dir:
-                    update_cloudinit = os.getenv('UPDATE_CLOUDINIT', default="true")
+                    update_cloudinit = os.getenv(
+                        'UPDATE_CLOUDINIT', default="true")
                     if update_cloudinit == "true":
                         update_cloudinit_modules(tmos_cloudinit_dir)
                     inject_cloudinit_modules(
                         disk_image, tmos_cloudinit_dir, usr_dev)
                 if usr_dev and tmos_usr_inject_dir:
                     inject_usr_files(disk_image, tmos_usr_inject_dir, usr_dev)
-                if config_dev and tmos_icontrollx_dir:
-                    inject_icontrollx_modules(
-                        disk_image, tmos_icontrollx_dir, config_dev)
+                if var_dev and tmos_var_inject_dir:
+                    inject_var_files(disk_image, tmos_var_inject_dir, var_dev)
+                if shared_dev and tmos_shared_inject_dir:
+                    inject_shared_files(
+                        disk_image, tmos_shared_inject_dir, shared_dev)
+                if shared_dev and tmos_icontrollx_dir:
+                    inject_icontrollx_packages(
+                        disk_image, tmos_icontrollx_dir, shared_dev)
                 if config_dev and tmos_config_inject_dir:
                     inject_config_files(
                         disk_image, tmos_config_inject_dir, config_dev)
@@ -213,17 +221,23 @@ def validate_tmos_device(disk_image):
     is_tmos = False
     config_dev = None
     usr_dev = None
+    var_dev = None
+    shared_dev = None
     for file_system in gfs.list_filesystems():
         if '_config' in file_system:
             is_tmos = True
             config_dev = file_system
         if '_usr' in file_system:
             usr_dev = file_system
+        if '_var' in file_system:
+            var_dev = file_system
+        if 'share' in file_system:
+            shared_dev = file_system
     if not is_tmos:
         LOG.warn('%s is not a TMOS image file.. skipping..', disk_image)
     gfs.close()
     wait_for_gfs(gfs)
-    return (is_tmos, config_dev, usr_dev)
+    return (is_tmos, config_dev, usr_dev, var_dev, shared_dev)
 
 
 def update_cloudinit_modules(tmos_cloudinit_dir):
@@ -265,21 +279,21 @@ def inject_cloudinit_modules(disk_image, tmos_cloudinit_dir, dev):
     wait_for_gfs(gfs)
 
 
-def inject_icontrollx_modules(disk_image, icontrollx_dir, dev):
+def inject_icontrollx_packages(disk_image, icontrollx_dir, dev):
     """Inject iControl LX install packages into TMOS disk image"""
     gfs = guestfs.GuestFS(python_return_dict=True)
     gfs.add_drive_opts(disk_image)
     gfs.launch()
     gfs.mount(dev, '/')
-    config_files = []
+    package_files = []
     for root, dirs, files in os.walk(icontrollx_dir):
         for file_name in files:
-            config_files.append(os.path.join(
+            package_files.append(os.path.join(
                 root, file_name)[len(icontrollx_dir):])
-    for config_file in config_files:
-        if not config_file.startswith('/.'):
-            local = "%s%s" % (icontrollx_dir, config_file)
-            remote = "/icontrollx_installs%s" % config_file
+    for package_file in package_files:
+        if not package_file.startswith('/.'):
+            local = "%s%s" % (icontrollx_dir, package_file)
+            remote = "/rpms/icontrollx_installs%s" % package_file
             LOG.debug('injecting %s to /config%s',
                       os.path.basename(local), remote)
             mkdir_path = os.path.dirname(remote)
@@ -305,6 +319,46 @@ def inject_usr_files(disk_image, usr_dir, dev):
         mkdir_path = os.path.dirname(usr_file)
         gfs.mkdir_p(mkdir_path)
         gfs.upload(local, usr_file)
+    gfs.close()
+    wait_for_gfs(gfs)
+
+
+def inject_var_files(disk_image, var_dir, dev):
+    """Patch /var file system of a TMOS disk image"""
+    gfs = guestfs.GuestFS(python_return_dict=True)
+    gfs.add_drive_opts(disk_image)
+    gfs.launch()
+    gfs.mount(dev, '/')
+    var_files = []
+    for root, dirs, files in os.walk(var_dir):
+        for file_name in files:
+            var_files.append(os.path.join(root, file_name)[len(var_dir):])
+    for var_file in var_files:
+        local = "%s%s" % (var_dir, var_file)
+        LOG.debug('injecting %s to /var%s', os.path.basename(local), var_file)
+        mkdir_path = os.path.dirname(var_file)
+        gfs.mkdir_p(mkdir_path)
+        gfs.upload(local, var_file)
+    gfs.close()
+    wait_for_gfs(gfs)
+
+
+def inject_shared_files(disk_image, shared_dir, dev):
+    """Patch /shared file system of a TMOS disk image"""
+    gfs = guestfs.GuestFS(python_return_dict=True)
+    gfs.add_drive_opts(disk_image)
+    gfs.launch()
+    gfs.mount(dev, '/')
+    shared_files = []
+    for root, dirs, files in os.walk(shared_dir):
+        for file_name in files:
+            shared_files.append(os.path.join(root, file_name)[len(shared_dir):])
+    for shared_file in shared_files:
+        local = "%s%s" % (shared_dir, shared_file)
+        LOG.debug('injecting %s to /shared%s', os.path.basename(local), shared_file)
+        mkdir_path = os.path.dirname(shared_file)
+        gfs.mkdir_p(mkdir_path)
+        gfs.upload(local, shared_file)
     gfs.close()
     wait_for_gfs(gfs)
 
@@ -343,6 +397,8 @@ if __name__ == "__main__":
     TMOS_ICONTROLLX_DIR = os.getenv(
         'TMOS_ICONTROLLX_DIR', '/icontrollx_installs')
     TMOS_USR_INJECT_DIR = os.getenv('TMOS_USR_INJECT_DIR', None)
+    TMOS_VAR_INJECT_DIR = os.getenv('TMOS_VAR_INJECT_DIR', None)
+    TMOS_SHARED_INJECT_DIR = os.getenv('TMOS_SHARED_INJECT_DIR', None)
     TMOS_CONFIG_INJECT_DIR = os.getenv('TMOS_CONFIG_INJECT_DIR', None)
     if len(sys.argv) > 1:
         TMOS_IMAGE_DIR = sys.argv[1]
@@ -357,11 +413,16 @@ if __name__ == "__main__":
                  TMOS_ICONTROLLX_DIR)
     if TMOS_USR_INJECT_DIR:
         LOG.info("Patching TMOS /usr file system from: %s", TMOS_USR_INJECT_DIR)
+    if TMOS_VAR_INJECT_DIR:
+        LOG.info("Patching TMOS /var file system from: %s", TMOS_VAR_INJECT_DIR)
+    if TMOS_SHARED_INJECT_DIR:
+        LOG.info("Patching TMOS /shared file system from: %s", TMOS_SHARED_INJECT_DIR)
     if TMOS_CONFIG_INJECT_DIR:
         LOG.info("Patching TMOS /config file system from: %s",
                  TMOS_CONFIG_INJECT_DIR)
     patch_images(TMOS_IMAGE_DIR, TMOS_CLOUDINIT_DIR,
-                 TMOS_USR_INJECT_DIR, TMOS_CONFIG_INJECT_DIR,
+                 TMOS_USR_INJECT_DIR, TMOS_VAR_INJECT_DIR,
+                 TMOS_CONFIG_INJECT_DIR, TMOS_SHARED_INJECT_DIR,
                  TMOS_ICONTROLLX_DIR)
     STOP_TIME = time.time()
     DURATION = STOP_TIME - START_TIME
