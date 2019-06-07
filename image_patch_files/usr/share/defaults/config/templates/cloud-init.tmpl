@@ -58,10 +58,6 @@ cloud_init_modules:
 @perl_begin
     print " #" if 'UNIX_CONFIG_CLOUDINIT_REPLACE_HASRUNCMD' ne 'true';
     print " - set-passwords\n";
-    print " - tmos-configdrive-openstack\n";
-    print " - tmos-static-mgmt\n";
-    print " - tmos-dhcpv4-tmm\n";
-    print " - tmos-declared\n";
     print " - runcmd\n";
 @perl_end
  # - disable-ec2-metadata
@@ -79,6 +75,10 @@ cloud_final_modules:
  - scripts-per-once
  - scripts-per-boot
  - scripts-per-instance
+ - tmos-configdrive-openstack;
+ - tmos-static-mgmt;
+ - tmos-dhcpv4-tmm;
+ - tmos-declared;
  - scripts-user
  - final-message
  # - power-state-change
