@@ -329,6 +329,8 @@ resources:
               phone_home_url: "__phone_home_url__"
               phone_home_cli: "__wc_notify__"
               post_onboard_enabled: true
+              post_onboard_commands:
+                - tmsh run cm config-sync to-group activeStandbyGroup 
             bootcmd:
               - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
   secondary_adc_instance:
@@ -419,7 +421,7 @@ resources:
               as3_enabled: false
               phone_home_url: "__phone_home_url__"
               phone_home_cli: "__wc_notify__"
-              post_onboard_enabled: true
+              post_onboard_enabled: false
             bootcmd:
               - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
 outputs:

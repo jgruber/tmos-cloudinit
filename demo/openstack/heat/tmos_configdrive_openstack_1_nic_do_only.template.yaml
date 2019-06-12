@@ -195,7 +195,7 @@ resources:
               as3_enabled: false
               phone_home_url: "__phone_home_url__"
               phone_home_cli: "__wc_notify__"
-              post_onboard_enabled: true
+              post_onboard_enabled: false
 
 outputs:
   tmos_management_xui_private:
