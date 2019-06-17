@@ -295,13 +295,13 @@ resources:
 outputs:
   tmos_management_xui_private:
     description: TMOS management service IP address
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_vip_port, fixed_ips, 0, ip_address ] } ], ':8443'] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_vip_port, fixed_ips, 0, ip_address ] }, ':8443' ]] }
   tmos_management_cli_private:
     description: TMOS management service IP address
     value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_vip_port, fixed_ips, 0, ip_address ] } ]] }
   tmos_management_xui_public:
     description: Floating IP access the TMOS management services
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_vip_floating_ip, floating_ip_address ] } ], ':8443'] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_vip_floating_ip, floating_ip_address ] }, ':8443' ]] }
   tmos_management_cli_public:
     description: TMOS management service IP address
     value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_vip_floating_ip, floating_ip_address ] } ]] }
