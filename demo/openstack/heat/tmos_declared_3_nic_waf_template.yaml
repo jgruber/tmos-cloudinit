@@ -1,20 +1,23 @@
 ################################################################################
 #
-# F5 Heat Template to Orchestrate a 1 NIC WAF
+# F5 Heat Template to Orchestrate a 3 NIC WAF
 #
 #    Management Network
 # ------------------------------ License Activation with BIG-IQ
 #           |
-#     1NIC  |    
-#        ------- 
-#        | VE  | 
-#        |     | 
-#        ------- 
+#     eth0  |    HA Network
+#        -------      |
+#        | VE  | 1.1  |        TMM 1.1 - HA Interface
+#        |     |   ---|        TMM 1.2 - Data Network
+#        -------      |
+# 1.2       |
+# ------------------------------
+#    Data Network
 #
 ################################################################################
 heat_template_version: 2015-10-15
 
-description: F5 Heat Template to Orchestrate a 4 NIC TMOS WAF
+description: F5 Heat Template to Orchestrate a 3 NIC TMOS WAF
 
 parameters:
   tmos_image:
@@ -36,6 +39,11 @@ parameters:
     description: Password to set for the built-in root user
     default: f5c0nfig
     hidden: true
+  tmos_root_authorized_ssh_key:
+    type: string
+    label: SSH Public Key
+    description: Authorized SSH public key for the root TMOS user
+    default: None
   tmos_admin_password:
     type: string
     label: TMOS Administrator Password
@@ -87,6 +95,46 @@ parameters:
     default: None
     constraints:
       - custom_constraint: neutron.network
+  management_mtu:
+    type: number
+    label: Management Network MTU
+    description: The MTU for the OAM network
+    default: 1500
+    constraints:
+      - range: { min: 1, max: 1500 }
+  cluster_network:
+    type: string
+    label: Cluster Network
+    description: HA Cluster Sync Network
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  cluster_mtu:
+    type: number
+    label: Cluster Network MTU
+    description: The MTU for the HA Cluster Sync Network
+    default: 1500
+    constraints:
+      - range: { min: 1, max: 1500 }
+  vip_network:
+    type: string
+    label: Virtual Servers Network
+    description: Virtual Servers Network for Client Traffic
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  vip_mtu:
+    type: number
+    label: Virtual Servers Network MTU
+    description: The MTU for the Virtual Servers Network
+    default: 1500
+    constraints:
+      - range: { min: 1, max: 1500 }
+  vip_subnet:
+    type: string
+    label: Virtual Servers Subnet
+    description: Virtual Servers Subnet for Client Virtual Servers
+    default: None
   heat_timeout:
     type: number
     label: Heat Stack Timeout
@@ -99,6 +147,7 @@ parameter_groups:
   - tmos_flavor
 - parameters:
   - tmos_root_password
+  - tmos_root_authorized_ssh_key
   - tmos_admin_password
 - parameters:
   - license_host
@@ -111,6 +160,12 @@ parameter_groups:
 - parameters:
   - external_network
   - management_network
+  - management_mtu
+  - cluster_network
+  - cluster_mtu
+  - vip_network
+  - vip_mtu
+  - vip_subnet
 - parameters:
   - heat_timeout
 
@@ -130,6 +185,27 @@ resources:
     properties:
       floating_network: { get_param: external_network }
       port_id: { get_resource: tmos_mgmt_port }
+  tmos_cluster_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: cluster_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  tmos_vip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: vip_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+      fixed_ips:
+        - subnet: { get_param: vip_subnet }
+        - subnet: { get_param: vip_subnet }
   wait_handle:
     type: OS::Heat::WaitConditionHandle
   wait_condition:
@@ -137,28 +213,38 @@ resources:
     properties:
       handle: { get_resource: wait_handle }
       timeout: { get_param: heat_timeout }
-  waf_instance:
+  adc_instance:
     type: OS::Nova::Server
-    depends_on: [tmos_mgmt_port]
+    depends_on: [tmos_mgmt_port, tmos_cluster_port, tmos_vip_port]
     properties:
       image: { get_param: tmos_image }
       flavor: { get_param: tmos_flavor }
       config_drive: true
-      key_name: admin
       networks:
         - port: { get_resource: tmos_mgmt_port }
+        - port: { get_resource: tmos_cluster_port }
+        - port: { get_resource: tmos_vip_port }
       user_data_format: RAW
       user_data:
         str_replace:
           params:
             __root_password__: { get_param: tmos_root_password }
             __admin_password__: { get_param: tmos_admin_password }
+            __root_ssh_key__: { get_param: tmos_root_authorized_ssh_key }
             __bigiq_host__: { get_param: license_host }
             __bigiq_username__: { get_param: license_username }
             __bigiq_password__: { get_param: license_password }
             __license_pool__: { get_param: license_pool }
-            __waf_vip__: { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }
+            __dns_server__: { get_attr: [ tmos_mgmt_port, subnets, 0, dns_nameservers, 0 ] }
+            __cluster_mtu__: { get_param: cluster_mtu }
+            __cluster_selfip__: { get_attr: [ tmos_cluster_port, fixed_ips, 0, ip_address ] }
+            __cluster_mask__: { str_split: [ '/', { get_attr: [ tmos_cluster_port, subnets, 0, cidr] }, 1 ] }
+            __vip_mtu__: { get_param: vip_mtu }
+            __vip_selfip__: { get_attr: [ tmos_vip_port, fixed_ips, 0, ip_address ] }
+            __vip_mask__: { str_split: [ '/', { get_attr: [ tmos_vip_port, subnets, 0, cidr] }, 1 ] }
+            __waf_vip__: { get_attr: [ tmos_vip_port, fixed_ips, 1, ip_address ] }
             __waf_policy_url__: { get_param: waf_policy_url }
+            __default_gateway__: { get_attr: [ tmos_vip_port, subnets, 0, gateway_ip ] }
             __phone_home_url__: { get_param: phone_home_url }
             __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
           template: |
@@ -168,13 +254,10 @@ resources:
               list: |
                 root:__root_password__
                 admin:__admin_password__
-            tmos_configdrive_openstack:
+            ssh_authorized_keys:
+              - __root_ssh_key__
+            tmos_declared:
               enabled: true
-              rd_enabled: false
-              configsync_interface: 1.0
-              default_route_interface: 1.0
-              inject_routes: true
-              do_enabled: true
               do_declaration:
                 schemaVersion: 1.0.0
                 class: Device
@@ -196,6 +279,53 @@ resources:
                     reachable: true
                     bigIpUsername: admin
                     bigIpPassword: __admin_password__
+                  dnsServers:
+                    class: DNS
+                    nameServers:
+                      - __dns_server__
+                    search:
+                      - example.openstack.com
+                  ntpServers:
+                    class: NTP
+                    servers:
+                      - 0.pool.ntp.org
+                      - 1.pool.ntp.org
+                      - 2.pool.ntp.org
+                  HA:
+                    class: VLAN
+                    mtu: __cluster_mtu__
+                    interfaces:
+                      - name: 1.1
+                        tagged: false
+                  HA-self:
+                    class: SelfIp
+                    address: __cluster_selfip__/__cluster_mask__
+                    vlan: HA
+                    allowService: all
+                    trafficGroup: traffic-group-local-only
+                  configsync:
+                    class: ConfigSync
+                    configsyncIp: /Common/HA-self/address
+                  failoverAddress:
+                    class: FailoverUnicast
+                    address: /Common/HA-self/address
+                  external:
+                    class: VLAN
+                    mtu: __vip_mtu__
+                    interfaces:
+                      - name: 1.3
+                        tagged: false
+                  external-self:
+                    class: SelfIp
+                    address: __vip_selfip__/__vip_mask__
+                    vlan: external
+                    allowService: none
+                    trafficGroup: traffic-group-local-only
+                  default:
+                    class: Route
+                    gw: __default_gateway__
+                    network: default
+                    mtu: __vip_mtu__
                   dbvars:
                     class: DbVariables
                     ui.advisory.enabled: true
@@ -225,41 +355,40 @@ resources:
                       monitors:
                         - http
                       members:
-                        - servicePort: 8001
+                        - servicePort: 80
                           serverAddresses:
-                            - 10.10.10.143
-                        - servicePort: 8002
+                            - 93.184.216.34
+                        - servicePort: 80
                           serverAddresses:
-                            - 10.10.10.144
+                            - 35.175.76.9
                     WAFPolicy:
                       class: WAF_Policy
                       url: "__waf_policy_url__"
                       ignoreChanges: true
               phone_home_url: "__phone_home_url__"
               phone_home_cli: "__wc_notify__"
-              post_onboard_enabled: false
             bootcmd:
               - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
 
 outputs:
   tmos_management_xui_private:
     description: TMOS management service IP address
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, ':8443' ]] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
   tmos_management_cli_private:
     description: TMOS management service IP address
     value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
   tmos_management_xui_public:
     description: Floating IP access the TMOS management services
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] }, ':8443' ]] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
   tmos_management_cli_public:
     description: TMOS management service IP address
     value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
   f5_declarative_onboarding:
     description: Device Level Declarative REST API
     value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
-  tmos_waf_ip:
-    description: TMOS Virtual Server IP address
-    value: { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }
+  f5_appsvcs_extension:
+    description: Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
   tmos_phone_home_url:
     description: Phone Home URL
     value: { get_param: phone_home_url }

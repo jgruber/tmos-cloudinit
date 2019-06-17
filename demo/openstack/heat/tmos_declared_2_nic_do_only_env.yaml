@@ -1,0 +1,19 @@
+parameters:
+  tmos_image: 20f68ec9-e5ee-44a8-9091-e2b62b8e7452
+  tmos_flavor: 61b6b513-4a74-4d8d-8365-a7b712b40aa0
+  tmos_root_authorized_ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCcCdw0/rVLI0AzpG4DLfScIwlP0P3+fqPoNBUIArvjRIulrKG0e7AXftbVMwG+MEtMOtglXttZIvQoOyjS4UkLdzfx25OPVGh1aTEnO/3UADC/tRDIcSxlcHjbGLgwGibYQD/FcSW3YTNIaD4vu5XJHAAK33n3xe7XWN2DdAKKSvei+wYtcZSM6UfxdIS6wdLL2AK4PchfahrSnasTEv2F6n8jcFURQgATv83M/JmnOhisPElomvA0jKGtuQc+ZFs8mZazZC+fsSyBzp08K7f4tvMzPad0gcmyHh6MY9mVS0dM/rmtIaxsLVCCz/FJNZndP3++KJPi18xalOop8yId root@devcloud2
+  tmos_root_password: f5c0nfig
+  tmos_admin_password: f5c0nfig
+  license_host: 192.168.245.114
+  license_username: admin
+  license_password: admin
+  license_pool: BIGIPVEREGKEYS
+  # monitor at: https://webhook.site/#!/7af00208-313d-42e9-b0f9-d0e88d631989/2a06b288-fd01-4f1c-a33e-097ef81712cb/1
+  phone_home_url: https://webhook.site/7af00208-313d-42e9-b0f9-d0e88d631989
+  external_network: 9c74eb83-ae4d-4b51-82fa-df0084cc8f6b
+  management_network: d0a2306c-31bb-46ef-8abf-6b622639c01a
+  management_mtu: 1450
+  vip_network: 5eaa04e7-efe1-47e9-a6a4-dad7e5465f32
+  vip_mtu: 1450
+  vip_subnet: 55ff861a-1dbf-45b4-b7b8-31006f1f9f20
+  heat_timeout: 1800
