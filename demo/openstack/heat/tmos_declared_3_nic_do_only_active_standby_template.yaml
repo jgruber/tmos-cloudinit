@@ -1,0 +1,568 @@
+################################################################################
+#
+# F5 Heat Template to Orchestrate a 3 NIC TMOS Active/Standby ADC
+#
+#    Management Network
+# ------------------------------------------- License Activation with BIG-IQ
+#           |                   |                  
+#           |    HA Network     |  
+#        -------      |      -------               
+#        | VE  | 1.1  | 1.1  | VE  |               TMM 1.1 - HA Interface
+#        |     |   ---|---   |     |               TMM 1.2 - Data Network
+#        -------      |      -------
+# 1.2      | |                 | |
+# -------------------------------------------  
+#    Data Network                              
+#
+################################################################################
+heat_template_version: 2015-10-15
+
+description: F5 Heat Template to Orchestrate a 3 NIC TMOS Active/Standby ADC
+
+parameters:
+  tmos_image:
+    type: string
+    label: TMOS VE Disk Image
+    description: The image to be used on the TMOS VE instance.
+    constraints:
+      - custom_constraint: glance.image
+  tmos_flavor:
+    type: string
+    label: TMOS VE Flavor
+    description: Type of instance (flavor) to be used for the TMOS VE instance.
+    default: m1.bigip.ALL.1SLOT
+    constraints:
+      - custom_constraint: nova.flavor
+  tmos_root_password:
+    type: string
+    label: TMOS Root Password
+    description: Password to set for the built-in root user
+    default: f5c0nfig
+    hidden: true
+  tmos_root_authorized_ssh_key:
+    type: string
+    label: SSH Public Key
+    description: Authorized SSH public key for the root TMOS user
+    default: None
+  tmos_admin_password:
+    type: string
+    label: TMOS Administrator Password
+    description: Password to set for the built-in admin user
+    default: f5c0nfig
+    hidden: true
+  license_host:
+    type: string
+    label: BIG-IQ Licensor Host
+    description: BIG-IQ IP or hostname to license TMOS VE instance
+    default: None
+  license_username:
+    type: string
+    label: BIG-IQ User
+    description: BIG-IQ user name
+    default: admin
+  license_password:
+    type: string
+    hidden: true
+    label: BIG-IQ Password
+    description: BIG-IQ password
+    default: admin
+  license_pool:
+    type: string
+    label: BIG-IQ License Pool
+    description: BIG-IQ license pool for this TMOS VE instance
+    default: None
+  phone_home_url:
+    type: string
+    label: Phone Home URL
+    description: URL for the phone home when onboarding finishes
+    default: https://webhook.site/
+  external_network:
+    type: string
+    label: External Access Network
+    description: The network to assign Floating IPs for management access
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  management_network:
+    type: string
+    label: Management Network
+    description: OAM Network
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  management_mtu:
+    type: number
+    label: Management Network MTU
+    description: The MTU for the OAM network
+    default: 1500
+    constraints:
+      - range: { min: 1, max: 1500 }
+  cluster_network:
+    type: string
+    label: Cluster Network
+    description: HA Cluster Sync Network
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  cluster_mtu:
+    type: number
+    label: Cluster Network MTU
+    description: The MTU for the HA Cluster Sync Network
+    default: 1500
+    constraints:
+      - range: { min: 1, max: 1500 }
+  vip_network:
+    type: string
+    label: Virtual Servers Network
+    description: Virtual Servers Network for Client Traffic
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
+  vip_mtu:
+    type: number
+    label: Virtual Servers Network MTU
+    description: The MTU for the Virtual Servers Network
+    default: 1500
+    constraints:
+      - range: { min: 1, max: 1500 }
+  vip_subnet:
+    type: string
+    label: Virtual Servers Subnet
+    description: Virtual Servers Subnet for Client Virtual Servers
+    default: None
+  heat_timeout:
+    type: number
+    label: Heat Stack Timeout
+    description: The Heat stack timeout in seconds
+    default: 1800
+
+parameter_groups:
+- parameters:
+  - tmos_image
+  - tmos_flavor
+- parameters:
+  - tmos_root_password
+  - tmos_root_authorized_ssh_key
+  - tmos_admin_password
+- parameters:
+  - license_host
+  - license_username
+  - license_password
+  - license_pool
+- parameters:
+  - phone_home_url
+- parameters:
+  - external_network
+  - management_network
+  - management_mtu
+  - cluster_network
+  - cluster_mtu
+  - vip_network
+  - vip_mtu
+  - vip_subnet
+- parameters:
+  - heat_timeout
+
+resources:
+  primary_tmos_mgmt_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  primary_tmos_mgmt_floating_ip:
+    type: OS::Neutron::FloatingIP
+    depends_on: primary_tmos_mgmt_port
+    properties:
+      floating_network: { get_param: external_network }
+      port_id: { get_resource: primary_tmos_mgmt_port }
+  primary_tmos_cluster_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: cluster_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  primary_tmos_vip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: vip_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+      fixed_ips:
+        - subnet: { get_param: vip_subnet }
+  secondary_tmos_mgmt_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  secondary_tmos_mgmt_floating_ip:
+    type: OS::Neutron::FloatingIP
+    depends_on: secondary_tmos_mgmt_port
+    properties:
+      floating_network: { get_param: external_network }
+      port_id: { get_resource: secondary_tmos_mgmt_port }
+  secondary_tmos_cluster_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: cluster_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  secondary_tmos_vip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: vip_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+      fixed_ips:
+        - subnet: { get_param: vip_subnet }
+        - subnet: { get_param: vip_subnet }
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      count: 1
+      timeout: { get_param: heat_timeout }
+  primary_adc_instance:
+    type: OS::Nova::Server
+    depends_on: [primary_tmos_mgmt_port, primary_tmos_cluster_port, primary_tmos_vip_port]
+    properties:
+      image: { get_param: tmos_image }
+      flavor: { get_param: tmos_flavor }
+      config_drive: true
+      networks:
+        - port: { get_resource: primary_tmos_mgmt_port }
+        - port: { get_resource: primary_tmos_cluster_port }
+        - port: { get_resource: primary_tmos_vip_port }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __root_password__: { get_param: tmos_root_password }
+            __admin_password__: { get_param: tmos_admin_password }
+            __root_ssh_key__: { get_param: tmos_root_authorized_ssh_key }
+            __bigiq_host__: { get_param: license_host }
+            __bigiq_username__: { get_param: license_username }
+            __bigiq_password__: { get_param: license_password }
+            __license_pool__: { get_param: license_pool }
+            __dns_server__: { get_attr: [ primary_tmos_mgmt_port, subnets, 0, dns_nameservers, 0 ] }
+            __cluster_mtu__: { get_param: cluster_mtu }
+            __cluster_selfip__: { get_attr: [ primary_tmos_cluster_port, fixed_ips, 0, ip_address ] }
+            __cluster_mask__: { str_split: [ '/', { get_attr: [ primary_tmos_cluster_port, subnets, 0, cidr] }, 1 ] }
+            __vip_mtu__: { get_param: vip_mtu }
+            __vip_selfip__: { get_attr: [ primary_tmos_vip_port, fixed_ips, 0, ip_address ] }
+            __vip_mask__: { str_split: [ '/', { get_attr: [ primary_tmos_vip_port, subnets, 0, cidr] }, 1 ] }
+            __default_gateway__: { get_attr: [ primary_tmos_vip_port, subnets, 0, gateway_ip ] }
+            __phone_home_url__: { get_param: phone_home_url }
+            __secondary_cluster_ip__: { get_attr: [ secondary_tmos_cluster_port, fixed_ips, 0, ip_address ] }
+            __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
+          template: |
+            #cloud-config
+            chpasswd:
+              expire: false
+              list: |
+                root:__root_password__
+                admin:__admin_password__
+            ssh_authorized_keys:
+              - __root_ssh_key__
+            tmos_declared:
+              enabled: true
+              do_declaration:
+                schemaVersion: 1.0.0
+                class: Device
+                async: true
+                label: Cloudinit Onboarding
+                Common:
+                  class: Tenant
+                  hostname: primary-adc-instance.local
+                  provisioningLevels:
+                    class: Provision
+                    ltm: nominal
+                  poolLicense:
+                    class: License
+                    licenseType: licensePool
+                    bigIqHost: __bigiq_host__
+                    bigIqUsername: __bigiq_username__
+                    bigIqPassword: __bigiq_password__
+                    licensePool: __license_pool__
+                    reachable: true
+                    bigIpUsername: admin
+                    bigIpPassword: __admin_password__
+                  dnsServers:
+                    class: DNS
+                    nameServers:
+                      - __dns_server__
+                    search:
+                      - example.openstack.com
+                  ntpServers:
+                    class: NTP
+                    servers:
+                      - 0.pool.ntp.org
+                      - 1.pool.ntp.org
+                      - 2.pool.ntp.org
+                  HA:
+                    class: VLAN
+                    mtu: __cluster_mtu__
+                    interfaces:
+                      - name: 1.1
+                        tagged: false
+                  HA-self:
+                    class: SelfIp
+                    address: __cluster_selfip__/__cluster_mask__
+                    vlan: HA
+                    allowService: all
+                    trafficGroup: traffic-group-local-only
+                  configsync:
+                    class: ConfigSync
+                    configsyncIp: /Common/HA-self/address
+                  failoverAddress:
+                    class: FailoverUnicast
+                    address: /Common/HA-self/address
+                  external:
+                    class: VLAN
+                    mtu: __vip_mtu__
+                    interfaces:
+                      - name: 1.3
+                        tagged: false
+                  external-self:
+                    class: SelfIp
+                    address: __vip_selfip__/__vip_mask__
+                    vlan: external
+                    allowService: none
+                    trafficGroup: traffic-group-local-only
+                  default:
+                    class: Route
+                    gw: __default_gateway__
+                    network: default
+                    mtu: __vip_mtu__
+                  dbvars:
+                    class: DbVariables
+                    ui.advisory.enabled: true
+                    ui.advisory.color: orange
+                    ui.advisory.text: This device is under centralized management.
+                  activeStandbyGroup:
+                    class: DeviceGroup
+                    type: sync-failover
+                    owner: secondary-adc-instance.local
+                    members:
+                      - primary-adc-instance.local
+                      - secondary-adc-instance.local
+                    autoSync: false
+                    networkFailover: true
+                    saveOnAutoSync: false
+                    fullLoadOnSync: false
+                    asmSync: false
+                  trust:
+                    class: DeviceTrust
+                    localUsername: admin
+                    localPassword: __admin_password__
+                    remoteHost: __secondary_cluster_ip__
+                    remoteUsername: admin
+                    remotePassword: __admin_password__
+              as3_enabled: false
+              post_onboard_enabled: true
+              post_onboard_commands:
+                - tmsh run cm config-sync to-group activeStandbyGroup 
+              phone_home_url: "__phone_home_url__"
+              phone_home_cli: "__wc_notify__"
+            bootcmd:
+              - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
+  secondary_adc_instance:
+    type: OS::Nova::Server
+    depends_on: [secondary_tmos_mgmt_port, secondary_tmos_cluster_port, secondary_tmos_vip_port]
+    properties:
+      image: { get_param: tmos_image }
+      flavor: { get_param: tmos_flavor }
+      config_drive: true
+      networks:
+        - port: { get_resource: secondary_tmos_mgmt_port }
+        - port: { get_resource: secondary_tmos_cluster_port }
+        - port: { get_resource: secondary_tmos_vip_port }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __root_password__: { get_param: tmos_root_password }
+            __admin_password__: { get_param: tmos_admin_password }
+            __root_ssh_key__: { get_param: tmos_root_authorized_ssh_key }
+            __bigiq_host__: { get_param: license_host }
+            __bigiq_username__: { get_param: license_username }
+            __bigiq_password__: { get_param: license_password }
+            __license_pool__: { get_param: license_pool }
+            __dns_server__: { get_attr: [ secondary_tmos_mgmt_port, subnets, 0, dns_nameservers, 0 ] }
+            __cluster_mtu__: { get_param: cluster_mtu }
+            __cluster_selfip__: { get_attr: [ secondary_tmos_cluster_port, fixed_ips, 0, ip_address ] }
+            __cluster_mask__: { str_split: [ '/', { get_attr: [ secondary_tmos_cluster_port, subnets, 0, cidr] }, 1 ] }
+            __vip_mtu__: { get_param: vip_mtu }
+            __vip_selfip__: { get_attr: [ secondary_tmos_vip_port, fixed_ips, 0, ip_address ] }
+            __vip_mask__: { str_split: [ '/', { get_attr: [ secondary_tmos_vip_port, subnets, 0, cidr] }, 1 ] }
+            __default_gateway__: { get_attr: [ secondary_tmos_vip_port, subnets, 0, gateway_ip ] }
+            __phone_home_url__: { get_param: phone_home_url }
+            __secondary_cluster_ip__: { get_attr: [ secondary_tmos_cluster_port, fixed_ips, 0, ip_address ] }
+            __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
+          template: |
+            #cloud-config
+            chpasswd:
+              expire: false
+              list: |
+                root:__root_password__
+                admin:__admin_password__
+            ssh_authorized_keys:
+              - __root_ssh_key__
+            tmos_declared:
+              enabled: true
+              do_declaration:
+                schemaVersion: 1.0.0
+                class: Device
+                async: true
+                label: Cloudinit Onboarding
+                Common:
+                  class: Tenant
+                  hostname: secondary-adc-instance.local
+                  provisioningLevels:
+                    class: Provision
+                    ltm: nominal
+                  poolLicense:
+                    class: License
+                    licenseType: licensePool
+                    bigIqHost: __bigiq_host__
+                    bigIqUsername: __bigiq_username__
+                    bigIqPassword: __bigiq_password__
+                    licensePool: __license_pool__
+                    reachable: true
+                    bigIpUsername: admin
+                    bigIpPassword: __admin_password__
+                  dnsServers:
+                    class: DNS
+                    nameServers:
+                      - __dns_server__
+                    search:
+                      - example.openstack.com
+                  ntpServers:
+                    class: NTP
+                    servers:
+                      - 0.pool.ntp.org
+                      - 1.pool.ntp.org
+                      - 2.pool.ntp.org
+                  HA:
+                    class: VLAN
+                    mtu: __cluster_mtu__
+                    interfaces:
+                      - name: 1.1
+                        tagged: false
+                  HA-self:
+                    class: SelfIp
+                    address: __cluster_selfip__/__cluster_mask__
+                    vlan: HA
+                    allowService: all
+                    trafficGroup: traffic-group-local-only
+                  configsync:
+                    class: ConfigSync
+                    configsyncIp: /Common/HA-self/address
+                  failoverAddress:
+                    class: FailoverUnicast
+                    address: /Common/HA-self/address
+                  external:
+                    class: VLAN
+                    mtu: __vip_mtu__
+                    interfaces:
+                      - name: 1.3
+                        tagged: false
+                  external-self:
+                    class: SelfIp
+                    address: __vip_selfip__/__vip_mask__
+                    vlan: external
+                    allowService: none
+                    trafficGroup: traffic-group-local-only
+                  default:
+                    class: Route
+                    gw: __default_gateway__
+                    network: default
+                    mtu: __vip_mtu__
+                  dbvars:
+                    class: DbVariables
+                    ui.advisory.enabled: true
+                    ui.advisory.color: orange
+                    ui.advisory.text: This device is under centralized management.
+                  activeStandbyGroup:
+                    class: DeviceGroup
+                    type: sync-failover
+                    owner: secondary-adc-instance.local
+                    members:
+                      - primary-adc-instance.local
+                      - secondary-adc-instance.local
+                    autoSync: false
+                    networkFailover: true
+                    saveOnAutoSync: false
+                    fullLoadOnSync: false
+                    asmSync: false
+                  trust:
+                    class: DeviceTrust
+                    localUsername: admin
+                    localPassword: __admin_password__
+                    remoteHost: __secondary_cluster_ip__
+                    remoteUsername: admin
+                    remotePassword: __admin_password__
+              as3_enabled: false
+              post_onboard_enabled: false
+              phone_home_url: "__phone_home_url__"
+              phone_home_cli: "__wc_notify__"
+            bootcmd:
+              - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
+outputs:
+  primary_tmos_management_xui_private:
+    description: Primary TMOS management service IP address
+    value: { list_join: ['', ['https://', { get_attr: [ primary_tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  primary_tmos_management_cli_private:
+    description: Primary TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ primary_tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  primary_tmos_management_xui_public:
+    description: Primary Floating IP access the TMOS management services
+    value: { list_join: ['', ['https://', { get_attr: [ primary_tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  primary_tmos_management_cli_public:
+    description: Primary TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ primary_tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  primary_f5_declarative_onboarding:
+    description: Primary Device Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ primary_tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  secondary_tmos_management_xui_private:
+    description: Secondary TMOS management service IP address
+    value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  secondary_tmos_management_cli_private:
+    description: Secondary TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ secondary_tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
+  secondary_tmos_management_xui_public:
+    description: Secondary Floating IP access the TMOS management services
+    value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  secondary_tmos_management_cli_public:
+    description: Secondary TMOS management service IP address
+    value: { list_join: ['', ['ssh://root@', { get_attr: [ secondary_tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
+  secondary_f5_declarative_onboarding:
+    description: Secondary Device Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  tmos_phone_home_url:
+    description: Phone Home URL
+    value: { get_param: phone_home_url }
+  heat_phone_home_cli:
+    description: Heat Wait Condition CLI
+    value: { get_attr: ['wait_handle', 'curl_cli'] }

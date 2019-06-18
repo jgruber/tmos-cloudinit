@@ -17,7 +17,7 @@
 ################################################################################
 heat_template_version: 2015-10-15
 
-description: F5 Heat Template to Orchestrate a 4 NIC TMOS WAF
+description: F5 Heat Template to Orchestrate a 4 NIC TMOS ADC
 
 parameters:
   tmos_image:

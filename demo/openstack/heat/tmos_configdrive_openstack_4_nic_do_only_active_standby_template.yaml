@@ -1,6 +1,6 @@
 ################################################################################
 #
-# F5 Heat Template to Orchestrate a 3 NIC TMOS Active/Standby ADC
+# F5 Heat Template to Orchestrate a 4 NIC TMOS Active/Standby ADC
 #
 #    Management Network
 # ------------------------------------------- License Activation with BIG-IQ
@@ -8,16 +8,16 @@
 #           |    HA Network     |  
 #        -------      |      -------               
 #        | VE  | 1.1  | 1.1  | VE  |               TMM 1.1 - HA Interface
-#        |     |   ---|---   |     |               TMM 1.2 - Network 1
+#        |     |   ---|---   |     |               TMM 1.2,3 - Network 1,2
 #        -------      |      -------
-# 1.2       |                   |
+# 1.2,3    | |                 | |
 # -------------------------------------------  
 #    Data Network                              
 #
 ################################################################################
 heat_template_version: 2015-10-15
 
-description: F5 Heat Template to Orchestrate a 4 NIC TMOS WAF
+description: F5 Heat Template to Orchestrate a 4 NIC TMOS ADC
 
 parameters:
   tmos_image:
@@ -92,6 +92,13 @@ parameters:
     default: None
     constraints:
       - custom_constraint: neutron.network
+  internal_network:
+    type: string
+    label: Internal Server Network
+    description: Internal Server Network
+    default: None
+    constraints:
+      - custom_constraint: neutron.network
   vip_network:
     type: string
     label: Virtual Servers Network
@@ -129,6 +136,7 @@ parameter_groups:
   - external_network
   - management_network
   - cluster_network
+  - internal_network
   - vip_network
   - vip_subnet
 - parameters:
@@ -154,6 +162,15 @@ resources:
     type: OS::Neutron::Port
     properties:
       network: { get_param: cluster_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
+  primary_tmos_internal_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: internal_network }
       security_groups:
         - default
       allowed_address_pairs:
@@ -194,6 +211,15 @@ resources:
       allowed_address_pairs:
         - ip_address: 0.0.0.0/0
         - ip_address: ::/0
+  secondary_tmos_internal_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: internal_network }
+      security_groups:
+        - default
+      allowed_address_pairs:
+        - ip_address: 0.0.0.0/0
+        - ip_address: ::/0
   secondary_tmos_vip_port:
     type: OS::Neutron::Port
     properties:
@@ -216,7 +242,7 @@ resources:
       timeout: { get_param: heat_timeout }
   primary_adc_instance:
     type: OS::Nova::Server
-    depends_on: [primary_tmos_mgmt_port, primary_tmos_cluster_port, primary_tmos_vip_port]
+    depends_on: [primary_tmos_mgmt_port, primary_tmos_cluster_port, primary_tmos_internal_port, primary_tmos_vip_port]
     properties:
       image: { get_param: tmos_image }
       flavor: { get_param: tmos_flavor }
@@ -225,6 +251,7 @@ resources:
       networks:
         - port: { get_resource: primary_tmos_mgmt_port }
         - port: { get_resource: primary_tmos_cluster_port }
+        - port: { get_resource: primary_tmos_internal_port }
         - port: { get_resource: primary_tmos_vip_port }
       user_data_format: RAW
       user_data:
@@ -250,7 +277,7 @@ resources:
               enabled: true
               rd_enabled: false
               configsync_interface: 1.1
-              default_route_interface: 1.2
+              default_route_interface: 1.3
               inject_routes: true
               do_enabled: true
               do_declaration:
@@ -303,12 +330,12 @@ resources:
               phone_home_cli: "__wc_notify__"
               post_onboard_enabled: true
               post_onboard_commands:
-                - tmsh run cm config-sync to-group activeStandbyGroup
+                - tmsh run cm config-sync to-group activeStandbyGroup 
             bootcmd:
               - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
   secondary_adc_instance:
     type: OS::Nova::Server
-    depends_on: [secondary_tmos_mgmt_port, secondary_tmos_cluster_port, secondary_tmos_vip_port]
+    depends_on: [secondary_tmos_mgmt_port, secondary_tmos_cluster_port, secondary_tmos_internal_port, secondary_tmos_vip_port]
     properties:
       image: { get_param: tmos_image }
       flavor: { get_param: tmos_flavor }
@@ -317,6 +344,7 @@ resources:
       networks:
         - port: { get_resource: secondary_tmos_mgmt_port }
         - port: { get_resource: secondary_tmos_cluster_port }
+        - port: { get_resource: secondary_tmos_internal_port }
         - port: { get_resource: secondary_tmos_vip_port }
       user_data_format: RAW
       user_data:
@@ -342,7 +370,7 @@ resources:
               enabled: true
               rd_enabled: false
               configsync_interface: 1.1
-              default_route_interface: 1.2
+              default_route_interface: 1.3
               inject_routes: true
               do_enabled: true
               do_declaration:

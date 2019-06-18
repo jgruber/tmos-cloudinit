@@ -201,11 +201,12 @@ resources:
               mtu: __vip_mtu__
               gw: __default_gateway__
               post_onboard_enabled: true
-              post_omboard_commands:
+              post_onboard_commands:
                 - tmsh modify sys dns name-servers replace-all-with { __dns_server__ }
                 - tmsh modify sys dns search replace-all-with { example.openstack.com }
                 - tmsh modify sys ntp timezone UTC
                 - tmsh modify sys ntp servers replace-all-with { 0.pool.ntp.org 1.pool.ntp.org }
+                - tmsh save sys config
             tmos_declared:
               enabled: true
               do_declaration:

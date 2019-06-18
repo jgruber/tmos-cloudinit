@@ -1,6 +1,6 @@
 ################################################################################
 #
-# F5 Heat Template to Orchestrate a 4 NIC ADC
+# F5 Heat Template to Orchestrate a 3 NIC ADC
 #
 #    Management Network
 # ------------------------------ License Activation with BIG-IQ
@@ -8,16 +8,16 @@
 #     eth0  |    HA Network
 #        -------      |
 #        | VE  | 1.1  |        TMM 1.1 - HA Interface
-#        |     |   ---|        TMM 1.2,3 - Network 1,2
+#        |     |   ---|        TMM 1.2 - Data Network
 #        -------      |
-# 1.2,3    | |
+# 1.2       |
 # ------------------------------
 #    Data Network
 #
 ################################################################################
 heat_template_version: 2015-10-15
 
-description: F5 Heat Template to Orchestrate a 4 NIC TMOS WAF
+description: F5 Heat Template to Orchestrate a 4 NIC TMOS ADC
 
 parameters:
   tmos_image:
@@ -92,17 +92,10 @@ parameters:
     default: None
     constraints:
       - custom_constraint: neutron.network
-  internal_network:
+  vip_network:
     type: string
     label: Internal Server Network
     description: Internal Server Network
-    default: None
-    constraints:
-      - custom_constraint: neutron.network
-  vip_network:
-    type: string
-    label: Virtual Servers Network
-    description: Virtual Servers Network for Client Traffic
     default: None
     constraints:
       - custom_constraint: neutron.network
@@ -136,7 +129,6 @@ parameter_groups:
   - external_network
   - management_network
   - cluster_network
-  - internal_network
   - vip_network
   - vip_subnet
 - parameters:
@@ -167,15 +159,6 @@ resources:
       allowed_address_pairs:
         - ip_address: 0.0.0.0/0
         - ip_address: ::/0
-  tmos_internal_port:
-    type: OS::Neutron::Port
-    properties:
-      network: { get_param: internal_network }
-      security_groups:
-        - default
-      allowed_address_pairs:
-        - ip_address: 0.0.0.0/0
-        - ip_address: ::/0
   tmos_vip_port:
     type: OS::Neutron::Port
     properties:
@@ -197,7 +180,7 @@ resources:
       timeout: { get_param: heat_timeout }
   adc_instance:
     type: OS::Nova::Server
-    depends_on: [tmos_mgmt_port, tmos_cluster_port, tmos_internal_port, tmos_vip_port]
+    depends_on: [tmos_mgmt_port, tmos_cluster_port, tmos_vip_port]
     properties:
       image: { get_param: tmos_image }
       flavor: { get_param: tmos_flavor }
@@ -206,7 +189,6 @@ resources:
       networks:
         - port: { get_resource: tmos_mgmt_port }
         - port: { get_resource: tmos_cluster_port }
-        - port: { get_resource: tmos_internal_port }
         - port: { get_resource: tmos_vip_port }
       user_data_format: RAW
       user_data:
@@ -231,7 +213,7 @@ resources:
               enabled: true
               rd_enabled: false
               configsync_interface: 1.1
-              default_route_interface: 1.3
+              default_route_interface: 1.2
               inject_routes: true
               do_enabled: true
               do_declaration:
