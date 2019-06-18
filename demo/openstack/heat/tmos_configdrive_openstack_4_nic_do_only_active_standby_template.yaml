@@ -66,6 +66,14 @@ parameters:
     label: BIG-IQ License Pool
     description: BIG-IQ license pool for this TMOS VE instance
     default: None
+  do_url:
+    type: string
+    label: DO URL
+    description: f5-declarative-onboarding package URL
+  as3_url:
+    type: string
+    label: AS3 URL
+    description: f5-appsvcs-extension package URL
   phone_home_url:
     type: string
     label: Phone Home URL
@@ -130,6 +138,9 @@ parameter_groups:
   - license_username
   - license_password
   - license_pool
+- parameters:
+  - do_url
+  - as3_url
 - parameters:
   - phone_home_url
 - parameters:
@@ -263,6 +274,8 @@ resources:
             __bigiq_username__: { get_param: license_username }
             __bigiq_password__: { get_param: license_password }
             __license_pool__: { get_param: license_pool }
+            __do_url__: { get_param: do_url }
+            __as3_url__: { get_param: as3_url }
             __phone_home_url__: { get_param: phone_home_url }
             __secondary_cluster_ip__: { get_attr: [ secondary_tmos_cluster_port, fixed_ips, 0, ip_address ] }
             __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
@@ -279,6 +292,9 @@ resources:
               configsync_interface: 1.1
               default_route_interface: 1.3
               inject_routes: true
+              icontrollx_package_urls:
+                - __do_url__
+                - __as3_url__
               do_enabled: true
               do_declaration:
                 schemaVersion: 1.0.0
@@ -356,6 +372,8 @@ resources:
             __bigiq_username__: { get_param: license_username }
             __bigiq_password__: { get_param: license_password }
             __license_pool__: { get_param: license_pool }
+            __do_url__: { get_param: do_url }
+            __as3_url__: { get_param: as3_url }
             __phone_home_url__: { get_param: phone_home_url }
             __secondary_cluster_ip__: { get_attr: [ secondary_tmos_cluster_port, fixed_ips, 0, ip_address ] }
             __wc_notify__: { get_attr: ['wait_handle', 'curl_cli'] }
@@ -372,6 +390,9 @@ resources:
               configsync_interface: 1.1
               default_route_interface: 1.3
               inject_routes: true
+              icontrollx_package_urls:
+                - __do_url__
+                - __as3_url__
               do_enabled: true
               do_declaration:
                 schemaVersion: 1.0.0

@@ -71,6 +71,14 @@ parameters:
     label: BIG-IQ License Pool
     description: BIG-IQ license pool for this TMOS VE instance
     default: None
+  do_url:
+    type: string
+    label: DO URL
+    description: f5-declarative-onboarding package URL
+  as3_url:
+    type: string
+    label: AS3 URL
+    description: f5-appsvcs-extension package URL
   waf_policy_url:
     type: string
     label: WAF Policy URL
@@ -169,6 +177,9 @@ parameter_groups:
   - license_password
   - license_pool
 - parameters:
+  - do_url
+  - as3_url
+- parameters:
   - waf_policy_url
   - phone_home_url
 - parameters:
@@ -261,6 +272,8 @@ resources:
             __bigiq_username__: { get_param: license_username }
             __bigiq_password__: { get_param: license_password }
             __license_pool__: { get_param: license_pool }
+            __do_url__: { get_param: do_url }
+            __as3_url__: { get_param: as3_url }
             __dns_server__: { get_attr: [ tmos_mgmt_port, subnets, 0, dns_nameservers, 0 ] }
             __cluster_mtu__: { get_param: cluster_mtu }
             __cluster_selfip__: { get_attr: [ tmos_cluster_port, fixed_ips, 0, ip_address ] }
@@ -287,6 +300,9 @@ resources:
               - __root_ssh_key__
             tmos_declared:
               enabled: true
+              icontrollx_package_urls:
+                - __do_url__
+                - __as3_url__
               do_declaration:
                 schemaVersion: 1.0.0
                 class: Device
