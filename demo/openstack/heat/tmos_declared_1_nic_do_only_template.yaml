@@ -188,6 +188,17 @@ resources:
                 admin:__admin_password__
             ssh_authorized_keys:
               - __root_ssh_key__
+            tmos_static_mgmt:
+              enabled: true
+              ip: __vip_selfip__/__vip_mask__
+              mtu: __vip_mtu__
+              gw: __default_gateway__
+              post_onboard_enabled: true
+              post_omboard_commands:
+                - tmsh modify sys dns name-servers replace-all-with { __dns_server__ }
+                - tmsh modify sys dns search replace-all-with { example.openstack.com }
+                - tmsh modify sys ntp timezone UTC
+                - tmsh modify sys ntp servers replace-all-with { 0.pool.ntp.org 1.pool.ntp.org }
             tmos_declared:
               enabled: true
               do_declaration:
@@ -241,6 +252,12 @@ resources:
                     gw: __default_gateway__
                     network: default
                     mtu: __vip_mtu__
+                  configsync:
+                    class: ConfigSync
+                    configsyncIp: /Common/self_1nic/address
+                  failoverAddress:
+                    class: FailoverUnicast
+                    address: /Common/self_1nic/address
                   dbvars:
                     class: DbVariables
                     ui.advisory.enabled: true
