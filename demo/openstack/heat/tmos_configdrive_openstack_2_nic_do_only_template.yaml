@@ -1,6 +1,6 @@
 ################################################################################
 #
-# F5 Heat Template to Orchestrate a 3 NIC ADC
+# F5 Heat Template to Orchestrate a 2 NIC TMOS ADC
 #
 #    Management Network
 # ------------------------------ License Activation with BIG-IQ
@@ -14,7 +14,7 @@
 ################################################################################
 heat_template_version: 2015-10-15
 
-description: F5 Heat Template to Orchestrate a 4 NIC TMOS ADC
+description: F5 Heat Template to Orchestrate a 2 NIC TMOS ADC
 
 parameters:
   tmos_image:

@@ -1,6 +1,6 @@
 ################################################################################
 #
-# F5 Heat Template to Orchestrate a 1 NIC WAF
+# F5 Heat Template to Orchestrate a 1 NIC TMOS WAF
 #
 #    Management Network
 # ------------------------------ License Activation with BIG-IQ
@@ -14,7 +14,7 @@
 ################################################################################
 heat_template_version: 2015-10-15
 
-description: F5 Heat Template to Orchestrate a 4 NIC TMOS WAF
+description: F5 Heat Template to Orchestrate a 1 NIC TMOS WAF
 
 parameters:
   tmos_image:
@@ -227,10 +227,10 @@ resources:
                       members:
                         - servicePort: 8001
                           serverAddresses:
-                            - 10.10.10.143
+                            - 34.230.136.58
                         - servicePort: 8002
                           serverAddresses:
-                            - 10.10.10.144
+                            - 52.0.57.170
                     WAFPolicy:
                       class: WAF_Policy
                       url: "__waf_policy_url__"

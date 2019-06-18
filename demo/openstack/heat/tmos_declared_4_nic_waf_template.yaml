@@ -1,6 +1,6 @@
 ################################################################################
 #
-# F5 Heat Template to Orchestrate a 4 NIC WAF
+# F5 Heat Template to Orchestrate a 4 NIC TMOS WAF
 #
 #    Management Network
 # ------------------------------ License Activation with BIG-IQ
@@ -398,10 +398,10 @@ resources:
                       members:
                         - servicePort: 80
                           serverAddresses:
-                            - 93.184.216.34
+                            - 34.230.136.58
                         - servicePort: 80
                           serverAddresses:
-                            - 35.175.76.9
+                            - 52.0.57.170
                     WAFPolicy:
                       class: WAF_Policy
                       url: "__waf_policy_url__"
