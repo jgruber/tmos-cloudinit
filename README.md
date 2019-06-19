@@ -289,6 +289,7 @@ This cloudinit module writes and executes onboarding scripts in the `/var/lib/cl
 | netmask | none | The management IP netmask, only required if ip is not CIDR |
 | gw | none | The management default gateway IP address |
 | mtu | 1500 | The management link MTU |
+| icontrollx_trusted_sources | true | Only install iControl LX RPMs which are signed by TMOS trusted keys |
 | icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | post_onboard_enabled | false | Enabled the attempt to run a list of commands after onboarding completes |
 | post_onboard_commands | list | List of CLI commands to run in order. Execution will halt at the point a CLI command fails. |
@@ -306,6 +307,7 @@ tmos_static_mgmt:
   netmask: 255.255.255.0
   gw: 192.168.245.1
   mtu: 1450
+  icontrollx_trusted_sources: false
   icontrollx_package_urls:
     - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
     - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
@@ -345,6 +347,7 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | default_route_interface | none | Explicitly define the TMM interface to use for the default route. Otherwise one will be determined automatically |
 | dhcp_timeout | 120 | Seconds to wait for a DHCP response when using DHCP for resource discovery |
 | inject_routes | true | Creates static routes from discovered route resources |
+| icontrollx_trusted_sources | true | Only install iControl LX RPMs which are signed by TMOS trusted keys |
 | icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | do_enable | true | Enables attempt to create a f5-declarative-onboarding declaration from discovered resources. If enabled, an asynchronous attempt to declare resouces via f5-declarative-onboarding will be made. If the initial request fails, non-declarative onboarding will resumse |
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
@@ -372,6 +375,7 @@ tmos_configdrive_openstack:
   default_route_interface: 1.3
   dhcp_timeout: 120
   inject_routes: true
+  icontrollx_trusted_sources: false
   icontrollx_package_urls:
     - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
     - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
@@ -431,6 +435,7 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | default_route_interface | none | Explicitly define the TMM interface to use for the default route. Otherwise one will be determined automatically |
 | dhcp_timeout | 120 | Seconds to wait for a DHCP response when using DHCP for resource discovery |
 | inject_routes | true | Creates static routes from discovered route resources |
+| icontrollx_trusted_sources | true | Only install iControl LX RPMs which are signed by TMOS trusted keys |
 | icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | do_enable | true | Enables attempt to create a f5-declarative-onboarding declaration from discovered resources. If enabled, an asynchronous attempt to declare resouces via f5-declarative-onboarding will be made. If the initial request fails, non-declarative onboarding will resumse |
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
@@ -456,6 +461,7 @@ tmos_dhcp_tmm:
   default_route_interface: 1.3
   dhcp_timeout: 120
   inject_routes: true
+  icontrollx_trusted_sources: false
   icontrollx_package_urls:
     - https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm
     - https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm
@@ -500,6 +506,7 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
 | enabled              | false      | Activates ths module|
+| icontrollx_trusted_sources | true | Only install iControl LX RPMs which are signed by TMOS trusted keys |
 | icontrollx_package_urls | none | List of URLs to download and install iControl LX extension packages before onboarding |
 | do_declaration | none |  YAML formatted f5-declarative-onboarding declaration. This declaration will augment or overwrite the declaration created by resource discovery |
 | as3_declaration | none | The f5-appsvcs-extension declaration to declare if enabled |
@@ -512,6 +519,7 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 #cloud-config
 tmos_declared:
   enabled: true
+  icontrollx_trusted_sources: false
   icontrollx_package_urls:
     - "https://github.com/F5Networks/f5-declarative-onboarding/raw/master/dist/f5-declarative-onboarding-1.3.0-4.noarch.rpm"
     - "https://github.com/F5Networks/f5-appsvcs-extension/raw/master/dist/latest/f5-appsvcs-3.10.0-5.noarch.rpm"
