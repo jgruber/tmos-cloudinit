@@ -251,6 +251,12 @@ resources:
                     vlan: internal
                     allowService: default
                     trafficGroup: traffic-group-local-only
+                  configsync:
+                    class: ConfigSync
+                    configsyncIp: /Common/self_1nic/address
+                  failoverAddress:
+                    class: FailoverUnicast
+                    address: /Common/self_1nic/address
                   default:
                     class: Route
                     gw: __default_gateway__
