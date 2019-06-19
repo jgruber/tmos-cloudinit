@@ -228,7 +228,6 @@ resources:
                   provisioningLevels:
                     class: Provision
                     ltm: nominal
-                    asm: nominal
                   poolLicense:
                     class: License
                     licenseType: licensePool
@@ -239,18 +238,6 @@ resources:
                     reachable: true
                     bigIpUsername: admin
                     bigIpPassword: __admin_password__
-                  dnsServers:
-                    class: DNS
-                    nameServers:
-                      - __dns_server__
-                    search:
-                      - example.openstack.com
-                  ntpServers:
-                    class: NTP
-                    servers:
-                      - 0.pool.ntp.org
-                      - 1.pool.ntp.org
-                      - 2.pool.ntp.org
                   internal:
                     class: VLAN
                     mtu: __vip_mtu__
@@ -269,12 +256,6 @@ resources:
                     gw: __default_gateway__
                     network: default
                     mtu: __vip_mtu__
-                  configsync:
-                    class: ConfigSync
-                    configsyncIp: /Common/self_1nic/address
-                  failoverAddress:
-                    class: FailoverUnicast
-                    address: /Common/self_1nic/address
                   dbvars:
                     class: DbVariables
                     ui.advisory.enabled: true
