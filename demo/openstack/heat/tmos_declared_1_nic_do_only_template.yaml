@@ -215,6 +215,7 @@ resources:
                 - tmsh save sys config
             tmos_declared:
               enabled: true
+              icontrollx_trusted_sources: false
               icontrollx_package_urls:
                 - __do_url__
                 - __as3_url__

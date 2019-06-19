@@ -228,6 +228,7 @@ resources:
               configsync_interface: 1.1
               default_route_interface: 1.2
               inject_routes: true
+              icontrollx_trusted_sources: false
               icontrollx_package_urls:
                 - __do_url__
                 - __as3_url__

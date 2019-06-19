@@ -259,6 +259,7 @@ resources:
               - __root_ssh_key__
             tmos_declared:
               enabled: true
+              icontrollx_trusted_sources: false
               icontrollx_package_urls:
                 - __do_url__
                 - __as3_url__
@@ -392,6 +393,7 @@ resources:
               - __root_ssh_key__
             tmos_declared:
               enabled: true
+              icontrollx_trusted_sources: false
               icontrollx_package_urls:
                 - __do_url__
                 - __as3_url__
