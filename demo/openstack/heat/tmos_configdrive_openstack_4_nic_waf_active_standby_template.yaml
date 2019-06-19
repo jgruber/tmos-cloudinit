@@ -311,7 +311,7 @@ resources:
                 label: Cloudinit Onboarding
                 Common:
                   class: Tenant
-                  hostname: primary-adc-instance.local
+                  hostname: primary-waf-instance.local
                   provisioningLevels:
                     class: Provision
                     ltm: nominal
@@ -334,10 +334,10 @@ resources:
                   activeStandbyGroup:
                     class: DeviceGroup
                     type: sync-failover
-                    owner: secondary-adc-instance.local
+                    owner: secondary-waf-instance.local
                     members:
-                      - primary-adc-instance.local
-                      - secondary-adc-instance.local
+                      - primary-waf-instance.local
+                      - secondary-waf-instance.local
                     autoSync: false
                     networkFailover: true
                     saveOnAutoSync: false
@@ -445,7 +445,7 @@ resources:
                 label: Cloudinit Onboarding
                 Common:
                   class: Tenant
-                  hostname: secondary-adc-instance.local
+                  hostname: secondary-waf-instance.local
                   provisioningLevels:
                     class: Provision
                     ltm: nominal
@@ -468,10 +468,10 @@ resources:
                   activeStandbyGroup:
                     class: DeviceGroup
                     type: sync-failover
-                    owner: secondary-adc-instance.local
+                    owner: secondary-waf-instance.local
                     members:
-                      - primary-adc-instance.local
-                      - secondary-adc-instance.local
+                      - primary-waf-instance.local
+                      - secondary-waf-instance.local
                     autoSync: false
                     networkFailover: true
                     saveOnAutoSync: false

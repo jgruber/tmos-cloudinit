@@ -288,7 +288,7 @@ resources:
       handle: { get_resource: wait_handle }
       count: 1
       timeout: { get_param: heat_timeout }
-  primary_adc_instance:
+  primary_waf_instance:
     type: OS::Nova::Server
     depends_on: [primary_tmos_mgmt_port, primary_tmos_cluster_port, primary_tmos_internal_port, primary_tmos_vip_port]
     properties:
@@ -453,7 +453,7 @@ resources:
               phone_home_cli: "__wc_notify__"
             bootcmd:
               - "printf \"platform=Z100\\nfamily=0xC000000\\nhost=Z100\\nsystype=0x71\\n\">/PLATFORM"
-  secondary_adc_instance:
+  secondary_waf_instance:
     type: OS::Nova::Server
     depends_on: [secondary_tmos_mgmt_port, secondary_tmos_cluster_port, secondary_tmos_internal_port, secondary_tmos_vip_port]
     properties:

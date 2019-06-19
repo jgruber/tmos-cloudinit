@@ -305,13 +305,13 @@ resources:
                     class: VLAN
                     mtu: __vip_mtu__
                     interfaces:
-                      - name: 1.3
+                      - name: 1.1
                         tagged: false
                   external-self:
                     class: SelfIp
                     address: __vip_selfip__/__vip_mask__
                     vlan: external
-                    allowService: none
+                    allowService: default
                     trafficGroup: traffic-group-local-only
                   default:
                     class: Route
@@ -438,13 +438,13 @@ resources:
                     class: VLAN
                     mtu: __vip_mtu__
                     interfaces:
-                      - name: 1.3
+                      - name: 1.1
                         tagged: false
                   external-self:
                     class: SelfIp
                     address: __vip_selfip__/__vip_mask__
                     vlan: external
-                    allowService: none
+                    allowService: default
                     trafficGroup: traffic-group-local-only
                   default:
                     class: Route

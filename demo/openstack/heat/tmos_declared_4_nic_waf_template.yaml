@@ -249,7 +249,7 @@ resources:
     properties:
       handle: { get_resource: wait_handle }
       timeout: { get_param: heat_timeout }
-  adc_instance:
+  waf_instance:
     type: OS::Nova::Server
     depends_on: [tmos_mgmt_port, tmos_cluster_port, tmos_internal_port, tmos_vip_port]
     properties:

@@ -224,7 +224,7 @@ resources:
     properties:
       handle: { get_resource: wait_handle }
       timeout: { get_param: heat_timeout }
-  adc_instance:
+  waf_instance:
     type: OS::Nova::Server
     depends_on: [tmos_mgmt_port, tmos_cluster_port, tmos_vip_port]
     properties:
@@ -329,7 +329,7 @@ resources:
                     class: VLAN
                     mtu: __vip_mtu__
                     interfaces:
-                      - name: 1.3
+                      - name: 1.2
                         tagged: false
                   external-self:
                     class: SelfIp
