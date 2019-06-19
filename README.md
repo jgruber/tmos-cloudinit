@@ -454,7 +454,7 @@ If f5-declarative-onboarding is disbaled, done by setting `do_eabled` to false, 
 
 ```
 #cloud-config
-tmos_dhcp_tmm:
+tmos_dhcpv4_tmm:
   enabled: true
   rd_enabled: false
   configsync_interface: 1.1
