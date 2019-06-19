@@ -1,15 +1,23 @@
 # tmos-cloudinit
 ### OpenStack HEAT templates using f5-declarative-onboarding and f5-appsrvcs-extension ###
 
-OpenStack HEAT represents a great way to lifecycle manage OpenStack resources. Where we get into trouble with HEAT is when we try to manage non OpenStack resources, meaning resource not defined by the OpenStack community. HEAT is extensible and vendors can make their customer resources available to their customers, but they must be maintained through the changes between OpenStack releases.
+OpenStack HEAT represents a great way to lifecycle manage OpenStack resources. Where we get into trouble with HEAT is when we try to manage non-OpenStack resources, meaning resources not defined by the OpenStack community. HEAT is extensible and vendors can make their customer resources available to their customers, but they must be maintained through the changes between OpenStack releases. In addition, if testing of a vendor Heat resource functionality required non-open components, upstreaming into community really did not address any vendor plugin quality issues. Vendor supplied and installed Heat plugins quickly became frowned upon by customers.
 
 F5 Automation Toolchain extensions are developed in two week sprints. Features are added and made available on a very rapid basis. To that end, the cloud-init modules in this repository support the dynamic installation of F5 Automation Toolchain extension into your cloud instances. The declarative nature makes for a nature fit wih OpenStack HEAT.
 
-In the past F5 published complex composed HEAT templates which were hard to customize and quickly fell behind OpenStack release testing. In an attempt to better serve our customers, and let them move at the pace they want, we changed philosphies and now support declarations made against the released Automation Toolchain extensions and publish example HEAT templates which make those declarations through OpenStack compute metadata. These templates use only community resources and can be customized by any community member. What F5 stands behind is the declarations made by HEAT templates to the Automation Toolchain extensions. You get the ability to customize your infrastructure deployment lifecycles, your declarations can unlock all the enterprise and provider features of your F5 TMOS instances, and your get the world class support of the TMOS instances you are used to.
+In the past F5 published both vendor specific Heat resources and complex composed HEAT templates. These proved hard to customize and quickly fell behind OpenStack release testing. In an attempt to better serve our customers, and let them move at the pace they want, we changed philosphies and now support declarations made against the released Automation Toolchain extensions. This repository contains example HEAT templates which make those declarations through OpenStack compute userdata. These templates use only OpenStack community resources without any advanced composition. They are simple YAML which can be customized by any customer. What F5 stands behind is the declarations made by HEAT templates to the Automation Toolchain extensions. You get the ability to customize your infrastructure deployment lifecycles with Heat, and simple YAML declarations unlock all the enterprise and provider features of your F5 TMOS instances. You get the world class support of the TMOS instances you are used to because of the Automation Toolchain extensions. To add features, simply change your declarations to the Automation Toolchain extensions in your Heat YAML templates.
 
 These templates expect you to customize the `env` files, pre-populating them with OpenStack networking IDs, but you could choose to customize these templates to create all the resources they need access to.
 
-##f5-declarative-onboarding only templates###
+There are Heat environment and template YAML files for each of the F5 cloudinit modules:
+
+- `tmos_configdrive_openstack_*` which create the Automation Toolchain f5-declarative-onboarding declaration classes from the OpenStack instance metadata and network_data.json files present on a cloudinit ConfigDrive data source.
+- `tmos_dhcpv4_tmm_*` which create the Automation Toolchain f5-declarative-onboarding declaration classes from DHCPv4 queries to all network ports associated with your OpenStack instance.
+- `tmos_declared_*` which fully declare all Automation Toolchain classes explicitly without use of any OpenStack instance metadata.
+
+Each set of templates come with `do_only` and `waf` examples. The `do_only` templates demonstrate Heat using only f5-declarative-onboarding declarations. The `waf` examples demonstrate Heat using both f5-declarative-onboarding and f5-appsvcs-extension declarations to fully define a WAF network function. These example templates can be customized to provide any network function capabale with the Automation Toolchain extensions.
+
+## f5-declarative-onboarding only templates ###
 
 The templates marked `do_only` only make f5-declarative-onboarding declarations through the F5 cloudinit modules. What you can do with f5-declarative-onboarding is defined here:
 
@@ -130,7 +138,7 @@ adc_instance:
               post_onboard_enabled: false
 ```
 
-##f5-declarative-onboarding and f5-appsvcs-extension declaration templates###
+## f5-declarative-onboarding and f5-appsvcs-extension declaration templates ###
 
 While f5-declarative-onboarding sets up the TMOS instance to match your infrastructure, f5-appsvcs-extension provides a declarative way to define TMOS virtual servies. 
 
