@@ -277,7 +277,6 @@ resources:
                   provisioningLevels:
                     class: Provision
                     ltm: nominal
-                    asm: nominal
                   poolLicense:
                     class: License
                     licenseType: licensePool
