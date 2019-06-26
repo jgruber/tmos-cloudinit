@@ -432,9 +432,18 @@ outputs:
   primary_tmos_management_cli_public:
     description: Primary TMOS management service IP address
     value: { list_join: ['', ['ssh://root@', { get_attr: [ primary_tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
-  primary_f5_declarative_onboarding:
+  primary_f5_declarative_onboarding_private:
     description: Primary Device Level Declarative REST API
     value: { list_join: ['', ['https://', { get_attr: [ primary_tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  primary_f5_appsvcs_extension_private:
+    description: Primary Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ primary_tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+  primary_f5_declarative_onboarding_public:
+    description: Primary Device Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ primary_tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  primary_f5_appsvcs_extension_public:
+    description: Primary Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ primary_tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
   secondary_tmos_management_xui_private:
     description: Secondary TMOS management service IP address
     value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_port, fixed_ips, 0, ip_address ] } ]] }
@@ -447,9 +456,18 @@ outputs:
   secondary_tmos_management_cli_public:
     description: Secondary TMOS management service IP address
     value: { list_join: ['', ['ssh://root@', { get_attr: [ secondary_tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
-  secondary_f5_declarative_onboarding:
+  secondary_f5_declarative_onboarding_private:
     description: Secondary Device Level Declarative REST API
     value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  secondary_f5_appsvcs_extension_private:
+    description: Secondary Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+  secondary_f5_declarative_onboarding_public:
+    description: Secondary Device Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  secondary_f5_appsvcs_extension_public:
+    description: Secondary Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
   tmos_phone_home_url:
     description: Phone Home URL
     value: { get_param: phone_home_url }
