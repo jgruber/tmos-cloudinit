@@ -369,6 +369,8 @@ This cloudinit module optionally composes f5-appsvcs-extension declarations in t
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
 | phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
 
+#### Note: It is often simplier to use the `set-password` cloudinit module (referenced below) to change the default `admin` and `root` passwords rather than the f5-declarative-onboarding declaration to change user passwords. Both ways work as designed. ####
+
 ### userdata usage ###
 
 ```
@@ -688,9 +690,9 @@ ssh_authorized_keys:
   - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAGEA3FSyQwBI6Z+nCSjUUk8EEAnnkhXlukKoUPND/RRClWz2s5TCzIkd3Ou5+Cyz71X0XmazM3l5WgeErvtIwQMyT1KjNoMhoJMrJnWqQPOt5Q8zWd9qG7PBl9+eiH5qV7NZ mykey@host
 ```
 
-### Things You Can Add to Your Userdata ###
+# TMOS Cloudinit Modules Support for SSH Keys and Passwords #
 
-In addition to the delcared elements, these modules also supports `cloud-config` delcarations for `ssh_authorized_keys`. Any declared keys will be authorized for the TMOS root account.
+In addition to the delcared elements, these modules also supports `cloud-config` delcarations for `ssh_authorized_keys` using the standard cloudinit `cloud-config` declaration syntax. Any declared keys will be authorized for the TMOS root account.
 
 ### additional userdata ###
 
@@ -700,9 +702,9 @@ ssh_authorized_keys:
   - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAGEA3FSyQwBI6Z+nCSjUUk8EEAnnkhXlukKoUPND/RRClWz2s5TCzIkd3Ou5+Cyz71X0XmazM3l5WgeErvtIwQMyT1KjNoMhoJMrJnWqQPOt5Q8zWd9qG7PBl9+eiH5qV7NZ mykey@host
 ```
 
-### Support for Standard Cloudinit set-password ###
+### Support Cloudinit set-password ###
 
-The patched VE image cloudinit configurations template has been alterred to support the standard cloudinit `set_password` module. You can cahnge the built-in TMOS `admin` and  `root` passwords using the following declarations.
+The patched VE image cloudinit configurations template has been alterred to support the standard cloudinit `set_password` module as well. You can cahnge the built-in TMOS `admin` and  `root` passwords using the following cloudinit `cloud-config` declarations.
 
 
 ```
