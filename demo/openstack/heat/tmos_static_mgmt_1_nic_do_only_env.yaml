@@ -1,0 +1,19 @@
+parameters:
+  tmos_image: 62a9857e-59ab-475d-a093-52252dd057d8
+  tmos_flavor: 61b6b513-4a74-4d8d-8365-a7b712b40aa0
+  tmos_root_password: f5c0nfig
+  tmos_admin_password: f5c0nfig
+  do_url: https://github.com/F5Networks/f5-declarative-onboarding/releases/download/v1.5.0/f5-declarative-onboarding-1.5.0-11.noarch.rpm
+  as3_url: https://github.com/F5Networks/f5-appsvcs-extension/releases/download/v3.12.0/f5-appsvcs-3.12.0-5.noarch.rpm
+  ip: 192.168.245.186/24
+  gw: 192.168.245.1
+  mtu: 1450
+  hostname: statichost.local
+  searchdomain: local
+  nameservers: "8.8.8.8,8.8.4.4"
+  ntpservers: "0.pool.ntp.org,1.pool.ntp.org,2.pool.ntp.org"
+  # monitor at: https://webhook.site/#!/7af00208-313d-42e9-b0f9-d0e88d631989/2a06b288-fd01-4f1c-a33e-097ef81712cb/1
+  phone_home_url: https://webhook.site/7af00208-313d-42e9-b0f9-d0e88d631989
+  external_network: 9c74eb83-ae4d-4b51-82fa-df0084cc8f6b
+  management_network: d0a2306c-31bb-46ef-8abf-6b622639c01a
+  heat_timeout: 1800
