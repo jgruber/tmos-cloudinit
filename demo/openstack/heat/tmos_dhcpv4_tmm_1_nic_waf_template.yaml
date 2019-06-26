@@ -273,16 +273,16 @@ outputs:
     value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
   f5_declarative_onboarding_private:
     description: Device Level Declarative REST API
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, ':8443/mgmt/shared/declarative-onboarding' ]] }
   f5_appsvcs_extension_private:
     description: Service Level Declarative REST API
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, ':8443/mgmt/shared/appsvcs/declare' ]] }
   f5_declarative_onboarding_public:
     description: Device Level Declarative REST API
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] }, ':8443/mgmt/shared/declarative-onboarding' ]] }
   f5_appsvcs_extension_public:
     description: Service Level Declarative REST API
-    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] }, ':8443/mgmt/shared/appsvcs/declare' ]] }
   tmos_waf_ip:
     description: TMOS Virtual Server IP address
     value: { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }

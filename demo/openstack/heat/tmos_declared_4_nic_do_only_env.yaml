@@ -1,5 +1,5 @@
 parameters:
-  tmos_image: d8a96689-9bf3-4c45-b4e3-5e21e1dc09f8
+  tmos_image: 62a9857e-59ab-475d-a093-52252dd057d8
   tmos_flavor: 61b6b513-4a74-4d8d-8365-a7b712b40aa0
   tmos_root_authorized_ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCcCdw0/rVLI0AzpG4DLfScIwlP0P3+fqPoNBUIArvjRIulrKG0e7AXftbVMwG+MEtMOtglXttZIvQoOyjS4UkLdzfx25OPVGh1aTEnO/3UADC/tRDIcSxlcHjbGLgwGibYQD/FcSW3YTNIaD4vu5XJHAAK33n3xe7XWN2DdAKKSvei+wYtcZSM6UfxdIS6wdLL2AK4PchfahrSnasTEv2F6n8jcFURQgATv83M/JmnOhisPElomvA0jKGtuQc+ZFs8mZazZC+fsSyBzp08K7f4tvMzPad0gcmyHh6MY9mVS0dM/rmtIaxsLVCCz/FJNZndP3++KJPi18xalOop8yId root@devcloud2
   tmos_root_password: f5c0nfig

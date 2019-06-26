@@ -278,9 +278,21 @@ outputs:
   tmos_management_cli_public:
     description: TMOS management service IP address
     value: { list_join: ['', ['ssh://root@', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] } ]] }
-  f5_declarative_onboarding:
+  f5_declarative_onboarding_private:
     description: Device Level Declarative REST API
     value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  f5_appsvcs_extension_private:
+    description: Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_port, fixed_ips, 0, ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+  f5_declarative_onboarding_public:
+    description: Device Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/declarative-onboarding' ]] }
+  f5_appsvcs_extension_public:
+    description: Service Level Declarative REST API
+    value: { list_join: ['', ['https://', { get_attr: [ tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+  tmos_vip_ip:
+    description: TMOS Virtual Server IP address
+    value: { get_attr: [ tmos_vip_port, fixed_ips, 0, ip_address ] }
   tmos_phone_home_url:
     description: Phone Home URL
     value: { get_param: phone_home_url }
