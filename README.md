@@ -294,7 +294,7 @@ You should use the module which matches your sources of per-instance configurati
 
 This cloudinit module extents TMOS to allow for static address assignment provided through cloudinit userdata.
 
-This cloudinit module writes and executes onboarding scripts in the `/var/lib/cloud/tmos_static_mgmt` directory.
+This modules create initialization scripts containing TMOS `tmsh` commands to fulfill the specified configurations. The generated initialization scripts are created in the `/opt/cloud/tmos_static_mgmt` directory on the device.
 
 | Module Attribute | Default | Description|
 | --------------------- | -----------| ---------------|
@@ -314,8 +314,6 @@ This cloudinit module writes and executes onboarding scripts in the `/var/lib/cl
 | phone_home_url | url | Reachable URL to report completion of this modules onboarding. |
 | phone_home_url_verify_tls | true | If the phone_home_url uses TLS, verify the host certificate. |
 | phone_home_cli | cli command | CLI command to run when this modules completes successfully. |
-
-This modules create initialization scripts containing TMOS `tmsh` commands to fulfill the specified configurations. The generated initialization scripts are created in the `/opt/cloud/tmos_static_mgmt` directory on the device.
 
 #### Note: The `tmos_static_mgmt` module can be used in conjuction with the `tmos_declared` module to add managment interface provisioning before iControl LX extension declarations are made. ####
 
@@ -529,7 +527,7 @@ This cloudinit module requries the use of a ConfigDrive data source and OpenStac
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
-This cloudinit module writes and executes onboarding scripts in the `/opt/cloud/tmos_configdrive_openstack` directory.
+This modules create initialization scripts containing TMOS `tmsh` commands to fulfill the specified configurations. The generated initialization scripts are created in the `/opt/cloud/tmos_configdrive_openstack` directory on the device.
 
 This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/var/lib/cloud/f5-declarative-onboarding` directory. This declaration is in JSON format.
 
@@ -619,7 +617,7 @@ This cloudinit module resolves configuration data for all interfaces (management
 
 There are implicit declarations of the TMM intefaces names to use for the data plane default route and the configuration sychronization interfaces. If these declarations are omitted, the module will attempt to assign them dynamically based on available network configuration data.
 
-This cloudinit module writes and executes onboarding scripts in the `/opt/cloud/tmos_dhcpv4_tmm` directory.
+This modules create initialization scripts containing TMOS `tmsh` commands to fulfill the specified configurations. The generated initialization scripts are created in the `/opt/cloud/tmos_dhcpv4_tmm` directory on the device.
 
 This cloudinit module optionally composes f5-declarative-onboarding declarations in the `/var/lib/cloud/f5-declarative-onboarding` directory. This declaration is in JSON format.
 
