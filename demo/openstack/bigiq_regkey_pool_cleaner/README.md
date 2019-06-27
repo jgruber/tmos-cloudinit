@@ -71,7 +71,7 @@ optional arguments:
 The command line arguments can also be defined by environment variables, making use with docker simple.
 
 ```
-$cat bigiq_regkey_pool_cleaner.env
+$cat bigiq_regkey_pool_cleaner.sh.env
 export LOGLEVEL=INFO
 export LICENSEPOOLINTERVAL=300
 export LICENSEREPORTFILE=/tmp/licensereport.txt
@@ -91,9 +91,20 @@ export OS_INTERFACE=public
 You run the script as a daemon with the exported values from the env file.
 
 ```
-$ source bigiq_regkey_pool_cleaner.env; ./bigiq_regkey_pool_cleaner.py -d 
+$ source bigiq_regkey_pool_cleaner.sh.env; ./bigiq_regkey_pool_cleaner.py -d 
 2019-06-27 15:12:22,136 - bigiq_regkey_pool_cleaner - DEBUG - Running in daemon mode, polling every 300 seconds
 2019-06-27 15:12:22,136 - bigiq_regkey_pool_cleaner - DEBUG - Polling licenses in BIGIPVEREGKEYS pool
 ```
 
+The repository comes with a Dockerfile to help you build a docker image of this application.
+
+```
+$ docker build -t bigiq_regkeypool_cleaner:latest demo/openstack/bigiq_regkey_pool_cleaner
+```
+
+To can simply run your container with a docker environment file.
+
+```
+$ docker run --rm -it --env-file ./demo/openstack/bigiq_regkey_pool_cleaner/bigiq_regkey_pool_cleaner.env bigiq_regkeypool_cleaner:latest
+```
 

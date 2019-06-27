@@ -46,8 +46,10 @@ LOGSTREAM.setFormatter(FORMATTER)
 LOG.addHandler(LOGSTREAM)
 
 
-def _get_bigiq_session(ctx):
+def _get_bigiq_session(ctx, reuse=True):
     ''' Creates a Requests Session to the BIG-IQ host configured '''
+    if reuse and hasattr(ctx, 'bigiq'):
+        return ctx.bigiq
     if requests.__version__ < '2.9.1':
         requests.packages.urllib3.disable_warnings()  # pylint: disable=no-member
     bigiq = requests.Session()
@@ -68,10 +70,13 @@ def _get_bigiq_session(ctx):
     bigiq.headers.update(
         {'X-F5-Auth-Token': response_json['token']['token']})
     bigiq.base_url = 'https://%s/mgmt/cm/device/licensing/pool' % ctx.bigiqhost
+    ctx.bigiq = bigiq
     return bigiq
 
 
-def _get_openstack_session(ctx):
+def _get_openstack_session(ctx, reuse=True):
+    if reuse and hasattr(ctx, 'openstack'):
+        return ctx.openstack
     if requests.__version__ < '2.9.1':
         requests.packages.urllib3.disable_warnings()  # pylint: disable=no-member
     openstack = requests.Session()
@@ -115,6 +120,7 @@ def _get_openstack_session(ctx):
             for endpoint in catalogitem['endpoints']:
                 if endpoint['interface'] == ctx.os_interface:
                     openstack.base_url = endpoint['url']
+    ctx.openstack = openstack
     return openstack
 
 
@@ -143,18 +149,16 @@ def _get_pool_id(ctx):
     return None
 
 
-def _get_active_members(ctx, pool_id):
+def _get_active_members(ctx):
     ''' Get regkey, member_id tuple by management IP address
-    :param: bigiq_session: BIG-IQ session object
-    :param: pool_id: BIG-IQ pool ID
-    :param: mgmt_ip: BIG-IP management IP address
+    :param: ctx:: application context
     :returns: list of regkey pool members with active keys
     '''
     LOG.debug(
-        'querying pools %s: %s for active licenses', ctx.licensepool, pool_id)
+        'querying pools %s: %s for active licenses', ctx.licensepool, ctx.bigiq_pool_id)
     bigiq_session = _get_bigiq_session(ctx)
     pools_url = '%s/regkey/licenses' % bigiq_session.base_url
-    offerings_url = '%s/%s/offerings' % (pools_url, pool_id)
+    offerings_url = '%s/%s/offerings' % (pools_url, ctx.bigiq_pool_id)
     response = bigiq_session.get(offerings_url)
     response.raise_for_status()
     response_json = response.json()
@@ -227,7 +231,7 @@ def _report(license_members, members_to_revoke):
 
 
 def _revoke(ctx, member):
-    bigiq_session = _get_bigiq_session(ctx)
+    bigiq_session = _get_bigiq_session(ctx, reuse=False)
     session_urlp = urlparse(bigiq_session.base_url)
     member_urlp = urlparse(member['selfLink'])
     member_url = '%s://%s%s' % (
@@ -235,6 +239,8 @@ def _revoke(ctx, member):
     delete_body = {'id': member['id'],
                    'username': 'admin',
                    'password': 'revoke'}
+    LOG.debug('revoking license for member %s : %s',
+              member['id'], member['macAddress'])
     response = bigiq_session.delete(member_url,
                                     json=delete_body,
                                     verify=False)
@@ -276,7 +282,7 @@ def main(ctx):
     LOG.setLevel(log_level_dict[ctx.log_level])
 
     try:
-        bigiq_pool_id = _get_pool_id(ctx)
+        ctx.bigiq_pool_id = _get_pool_id(ctx)
     except Exception as ex:
         LOG.error("Pool %s not found", ctx.licensepool)
         return False
@@ -287,7 +293,9 @@ def main(ctx):
         while True:
             try:
                 LOG.debug('Polling licenses in %s pool' % ctx.licensepool)
-                license_pool_members = _get_active_members(ctx, bigiq_pool_id)
+                # Get a new session every pool cycle
+                _get_bigiq_session(ctx, reuse=False)
+                license_pool_members = _get_active_members(ctx)
                 revoke_members = _get_members_to_revoke(
                     ctx, license_pool_members)
                 reconcile(ctx, license_pool_members, revoke_members)
@@ -301,7 +309,7 @@ def main(ctx):
     else:
         try:
             LOG.debug('Polling licenses in %s pool' % ctx.licensepool)
-            license_pool_members = _get_active_members(ctx, bigiq_pool_id)
+            license_pool_members = _get_active_members(ctx)
             revoke_members = _get_members_to_revoke(ctx, license_pool_members)
             reconcile(ctx, license_pool_members, revoke_members)
         except Exception as ex:
