@@ -125,6 +125,7 @@ def _get_pool_id(ctx):
     :param: pool_name: BIG-IQ pool name
     :returns: Pool ID string
     '''
+    LOG.debug('finding pool %s', ctx.licensepool)
     bigiq_session = _get_bigiq_session(ctx)
     pools_url = '%s/regkey/licenses?$select=id,kind,name' % \
         bigiq_session.base_url
@@ -149,6 +150,8 @@ def _get_active_members(ctx, pool_id):
     :param: mgmt_ip: BIG-IP management IP address
     :returns: list of regkey pool members with active keys
     '''
+    LOG.debug(
+        'querying pools %s: %s for active licenses', ctx.licensepool, pool_id)
     bigiq_session = _get_bigiq_session(ctx)
     pools_url = '%s/regkey/licenses' % bigiq_session.base_url
     offerings_url = '%s/%s/offerings' % (pools_url, pool_id)
@@ -170,6 +173,8 @@ def _get_active_members(ctx, pool_id):
 
 
 def _get_members_to_revoke(ctx, license_pool_members):
+    LOG.debug(
+        'querying network ports for %d active license members', len(license_pool_members))
     openstack_session = _get_openstack_session(ctx)
     ports_url = '%s/v2.0/ports' % openstack_session.base_url
     members_to_revoke = []
