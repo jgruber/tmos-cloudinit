@@ -288,6 +288,9 @@ def main(ctx):
             # resolve the Pool ID from pool name
             try:
                 ctx.bigiq_pool_id = _get_pool_id(ctx)
+            except KeyboardInterrupt:
+                LOG.info('Existing..')
+                sys.exit(1)
             except Exception as ex:
                 LOG.error("Pool %s not found", ctx.licensepool)
                 time.sleep(ctx.poll_cycle)
@@ -314,6 +317,9 @@ def main(ctx):
         # resolve the Pool ID from pool name
         try:
             ctx.bigiq_pool_id = _get_pool_id(ctx)
+        except KeyboardInterrupt:
+            LOG.info('Existing..')
+            sys.exit(1)
         except Exception as ex:
             LOG.error("Pool %s not found", ctx.licensepool)
             return False
