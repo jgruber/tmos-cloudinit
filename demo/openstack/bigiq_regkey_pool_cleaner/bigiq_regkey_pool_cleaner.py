@@ -292,7 +292,7 @@ def main(ctx):
                 LOG.info('Existing..')
                 sys.exit(1)
             except Exception as ex:
-                LOG.error("Pool %s not found", ctx.licensepool)
+                LOG.error("Pool %s not found - %s", ctx.licensepool, ex)
                 time.sleep(ctx.poll_cycle)
                 continue
             try:
@@ -321,7 +321,7 @@ def main(ctx):
             LOG.info('Existing..')
             sys.exit(1)
         except Exception as ex:
-            LOG.error("Pool %s not found", ctx.licensepool)
+            LOG.error("Pool %s not found - %s", ctx.licensepool, ex)
             return False
         try:
             # find active licenses
