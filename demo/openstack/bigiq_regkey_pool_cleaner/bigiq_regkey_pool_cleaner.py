@@ -177,6 +177,8 @@ def _get_active_members(ctx):
 
 
 def _get_members_to_revoke(ctx, license_pool_members):
+    if not license_pool_members:
+        return []
     LOG.debug(
         'querying network ports for %d active license members', len(license_pool_members))
     openstack_session = _get_openstack_session(ctx)
@@ -198,6 +200,8 @@ def _get_members_to_revoke(ctx, license_pool_members):
 
 
 def _report(license_members, members_to_revoke):
+    if not license_members:
+        return []
     return_records = []
     now = datetime.datetime.utcnow()
     fmt_ts = now.strftime('%Y-%m-%dT%H:%M:%S') + \
@@ -251,6 +255,8 @@ def _revoke(ctx, member):
 
 def reconcile(ctx, license_members, members_to_revoke):
     ''' print out a report for all active license members and revoke missing ports '''
+    if not license_members:
+        return
     reports = _report(license_members, members_to_revoke)
     if ctx.report_file:
         with open(ctx.report_file, 'a+') as report_file:
@@ -296,7 +302,7 @@ def main(ctx):
                 time.sleep(ctx.poll_cycle)
                 continue
             try:
-                LOG.debug('Polling licenses in %s pool' % ctx.licensepool)
+                LOG.debug('Polling licenses in %s pool', ctx.licensepool)
                 # Get a new session every pool cycle
                 _get_bigiq_session(ctx, reuse=False)
                 # find active licenses
@@ -325,7 +331,7 @@ def main(ctx):
             return False
         try:
             # find active licenses
-            LOG.debug('Polling licenses in %s pool' % ctx.licensepool)
+            LOG.debug('Polling licenses in %s pool', ctx.licensepool)
             license_pool_members = _get_active_members(ctx)
             # find active licenses which do not have Neutron ports for their MAC address
             revoke_members = _get_members_to_revoke(ctx, license_pool_members)
