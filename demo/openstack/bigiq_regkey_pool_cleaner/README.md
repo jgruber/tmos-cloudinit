@@ -99,7 +99,7 @@ $ source bigiq_regkey_pool_cleaner.sh.env; ./bigiq_regkey_pool_cleaner.py -d
 The repository comes with a Dockerfile to help you build a docker image of this application.
 
 ```
-$ docker build -t bigiq_regkeypool_cleaner:latest demo/openstack/bigiq_regkey_pool_cleaner
+$ docker build --rm -t bigiq_regkeypool_cleaner:latest demo/openstack/bigiq_regkey_pool_cleaner
 ```
 
 To can simply run your container with a docker environment file.

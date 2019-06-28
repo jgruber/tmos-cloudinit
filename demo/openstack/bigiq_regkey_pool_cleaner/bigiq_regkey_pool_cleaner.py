@@ -281,23 +281,27 @@ def main(ctx):
 
     LOG.setLevel(log_level_dict[ctx.log_level])
 
-    try:
-        ctx.bigiq_pool_id = _get_pool_id(ctx)
-    except Exception as ex:
-        LOG.error("Pool %s not found", ctx.licensepool)
-        return False
-
     if ctx.daemon:
         LOG.debug('Running in daemon mode, polling every %d seconds',
                   ctx.poll_cycle)
         while True:
+            # resolve the Pool ID from pool name
+            try:
+                ctx.bigiq_pool_id = _get_pool_id(ctx)
+            except Exception as ex:
+                LOG.error("Pool %s not found", ctx.licensepool)
+                time.sleep(ctx.poll_cycle)
+                continue
             try:
                 LOG.debug('Polling licenses in %s pool' % ctx.licensepool)
                 # Get a new session every pool cycle
                 _get_bigiq_session(ctx, reuse=False)
+                # find active licenses
                 license_pool_members = _get_active_members(ctx)
+                # find active licenses which do not have Neutron ports for their MAC address
                 revoke_members = _get_members_to_revoke(
                     ctx, license_pool_members)
+                # report and revoke
                 reconcile(ctx, license_pool_members, revoke_members)
                 time.sleep(ctx.poll_cycle)
             except KeyboardInterrupt:
@@ -307,10 +311,19 @@ def main(ctx):
                 LOG.error("Error reconciling licenses %s", ex)
                 time.sleep(ctx.poll_cycle)
     else:
+        # resolve the Pool ID from pool name
         try:
+            ctx.bigiq_pool_id = _get_pool_id(ctx)
+        except Exception as ex:
+            LOG.error("Pool %s not found", ctx.licensepool)
+            return False
+        try:
+            # find active licenses
             LOG.debug('Polling licenses in %s pool' % ctx.licensepool)
             license_pool_members = _get_active_members(ctx)
+            # find active licenses which do not have Neutron ports for their MAC address
             revoke_members = _get_members_to_revoke(ctx, license_pool_members)
+            # report and revoke
             reconcile(ctx, license_pool_members, revoke_members)
         except Exception as ex:
             LOG.error("Error reconciling licenses %s", ex)
