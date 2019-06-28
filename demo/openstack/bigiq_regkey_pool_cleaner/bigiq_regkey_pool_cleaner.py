@@ -291,6 +291,8 @@ def main(ctx):
         LOG.debug('Running in daemon mode, polling every %d seconds',
                   ctx.poll_cycle)
         while True:
+            # Get a new session every pool cycle
+            _get_bigiq_session(ctx, reuse=False)
             # resolve the Pool ID from pool name
             try:
                 ctx.bigiq_pool_id = _get_pool_id(ctx)
@@ -303,8 +305,6 @@ def main(ctx):
                 continue
             try:
                 LOG.debug('Polling licenses in %s pool', ctx.licensepool)
-                # Get a new session every pool cycle
-                _get_bigiq_session(ctx, reuse=False)
                 # find active licenses
                 license_pool_members = _get_active_members(ctx)
                 # find active licenses which do not have Neutron ports for their MAC address
