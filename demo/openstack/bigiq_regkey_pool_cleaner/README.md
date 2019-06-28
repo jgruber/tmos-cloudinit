@@ -1,5 +1,7 @@
-# bigiq_regkey_pool_cleaner
-### Python Application To Remove Allocated License on Non Active OpenStack Ports ###
+
+# bigiq_regkey_pool_cleaner #
+
+## Python Application To Remove Allocated License on Non Active OpenStack Ports ##
 
 Often TMOS virtual editions instances, with an allocated license from a BIG-IQ license pool, can be deleted without first revoking the license. In such cases, BIG-IQ will never be able to communicate properly with the BIG-IP to revoke the license.
 
@@ -91,7 +93,7 @@ export OS_INTERFACE=public
 You run the script as a daemon with the exported values from the env file.
 
 ```
-$ source bigiq_regkey_pool_cleaner.sh.env; ./bigiq_regkey_pool_cleaner.py -d 
+$ source bigiq_regkey_pool_cleaner.sh.env; ./bigiq_regkey_pool_cleaner.py -d
 2019-06-27 15:12:22,136 - bigiq_regkey_pool_cleaner - DEBUG - Running in daemon mode, polling every 300 seconds
 2019-06-27 15:12:22,136 - bigiq_regkey_pool_cleaner - DEBUG - Polling licenses in BIGIPVEREGKEYS pool
 ```
@@ -99,12 +101,17 @@ $ source bigiq_regkey_pool_cleaner.sh.env; ./bigiq_regkey_pool_cleaner.py -d
 The repository comes with a Dockerfile to help you build a docker image of this application.
 
 ```
-$ docker build --rm -t bigiq_regkeypool_cleaner:latest demo/openstack/bigiq_regkey_pool_cleaner
+docker build --rm -t bigiq_regkeypool_cleaner:latest demo/openstack/bigiq_regkey_pool_cleaner
 ```
 
 To can simply run your container with a docker environment file.
 
 ```
-$ docker run --rm -it --env-file ./demo/openstack/bigiq_regkey_pool_cleaner/bigiq_regkey_pool_cleaner.env bigiq_regkeypool_cleaner:latest
+docker run --rm -it --env-file ./demo/openstack/bigiq_regkey_pool_cleaner/bigiq_regkey_pool_cleaner.env bigiq_regkeypool_cleaner:latest
 ```
 
+To let the container run in the background as a service, simply daemonize the container.
+
+```
+docker run -d --rm -it --env-file ./demo/openstack/bigiq_regkey_pool_cleaner/bigiq_regkey_pool_cleaner.env bigiq_regkeypool_cleaner:latest
+```
