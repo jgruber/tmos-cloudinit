@@ -12,8 +12,8 @@ parameters:
   searchdomain: local
   nameservers: "8.8.8.8,8.8.4.4"
   ntpservers: "0.pool.ntp.org,1.pool.ntp.org,2.pool.ntp.org"
-  # monitor at: https://webhook.site/#!/7af00208-313d-42e9-b0f9-d0e88d631989/2a06b288-fd01-4f1c-a33e-097ef81712cb/1
-  phone_home_url: https://webhook.site/7af00208-313d-42e9-b0f9-d0e88d631989
+  # monitor at: https://webhook.site/#!/5a5310ff-648d-4dfc-97e3-6bbe9d88d111/9c8aeb41-0440-47da-b94e-75b2052aa6a2/1
+  phone_home_url: https://webhook.site/5a5310ff-648d-4dfc-97e3-6bbe9d88d111
   external_network: a37e3cf0-2101-42b3-8069-f1eecc6d9b6a
   management_network: c3576372-4bcf-40c2-97e5-af555e5fe246
   cluster_network: f09e17cf-17e6-4a0b-835d-a94866df50a8
