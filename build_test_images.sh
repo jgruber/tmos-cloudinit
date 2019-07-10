@@ -1,5 +1,5 @@
 #!/bin/bash
-source /data/F5Downloads/admin-openrc.sh
+source /data/F5Download/admin-openrc.sh
 iControlLXPackagesDir=/data/iControlLXNoBuilds
 imagesDir=/data/F5Download/BIGIP-TEST
 version=14.1.0.5-0.0.5

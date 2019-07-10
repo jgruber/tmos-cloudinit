@@ -1,6 +1,6 @@
 parameters:
-  tmos_image: 5780078e-3a08-4361-92ee-524ae22ebb7f
-  tmos_flavor: 5ef733c5-6b12-47cd-9909-7b2e974f4549
+  tmos_image: f5d53e92-fa80-4de8-9b02-18dc3285e192
+  tmos_flavor: 3db1c6f8-ec58-4072-83fb-c0f01ae29607
   tmos_root_authorized_ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCcCdw0/rVLI0AzpG4DLfScIwlP0P3+fqPoNBUIArvjRIulrKG0e7AXftbVMwG+MEtMOtglXttZIvQoOyjS4UkLdzfx25OPVGh1aTEnO/3UADC/tRDIcSxlcHjbGLgwGibYQD/FcSW3YTNIaD4vu5XJHAAK33n3xe7XWN2DdAKKSvei+wYtcZSM6UfxdIS6wdLL2AK4PchfahrSnasTEv2F6n8jcFURQgATv83M/JmnOhisPElomvA0jKGtuQc+ZFs8mZazZC+fsSyBzp08K7f4tvMzPad0gcmyHh6MY9mVS0dM/rmtIaxsLVCCz/FJNZndP3++KJPi18xalOop8yId root@devcloud2
   tmos_root_password: f5c0nfig
   tmos_admin_password: f5c0nfig
@@ -12,12 +12,12 @@ parameters:
   as3_url: https://github.com/F5Networks/f5-appsvcs-extension/releases/download/v3.12.0/f5-appsvcs-3.12.0-5.noarch.rpm
   # monitor at: https://webhook.site/#!/5a5310ff-648d-4dfc-97e3-6bbe9d88d111/9c8aeb41-0440-47da-b94e-75b2052aa6a2/1
   phone_home_url: https://webhook.site/5a5310ff-648d-4dfc-97e3-6bbe9d88d111
-  external_network: a37e3cf0-2101-42b3-8069-f1eecc6d9b6a
-  management_network: c3576372-4bcf-40c2-97e5-af555e5fe246
+  external_network: 8fbbf835-806a-46b7-8e63-1d10866d0ffe
+  management_network: 628a623d-b189-4a4e-b942-cfde22f88537
   management_mtu: 1450
-  cluster_network: f09e17cf-17e6-4a0b-835d-a94866df50a8
+  cluster_network: c37fbf04-da8a-42c5-8cd0-25d2228f22f2
   cluster_mtu: 1450
-  vip_network: 1c10644b-13fb-48d3-b6cf-311ad7e885c5
+  vip_network: 75f7f27b-da13-4042-ac22-3706d389d3c5
   vip_mtu: 1450
-  vip_subnet: 51138382-92d3-4822-813a-860e24742d1f
+  vip_subnet: f7ca6648-484f-4e8a-8fe5-99d273d7fc38
   heat_timeout: 1800

@@ -223,7 +223,7 @@ resources:
     type: OS::Heat::WaitCondition
     properties:
       handle: { get_resource: wait_handle }
-      count: 1
+      count: 2
       timeout: { get_param: heat_timeout }
   primary_adc_instance:
     type: OS::Nova::Server

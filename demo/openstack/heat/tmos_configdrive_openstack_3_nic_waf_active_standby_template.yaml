@@ -188,6 +188,13 @@ resources:
       fixed_ips:
         - subnet: { get_param: vip_subnet }
         - subnet: { get_param: vip_subnet }
+  service_floating_ip:
+    type: OS::Neutron::FloatingIP
+    depends_on: primary_tmos_vip_port
+    properties:
+      floating_network: { get_param: external_network }
+      port_id: { get_resource: primary_tmos_vip_port }
+      fixed_ip_address: { get_attr: [ primary_tmos_vip_port, fixed_ips, 0, ip_address ] }
   secondary_tmos_mgmt_port:
     type: OS::Neutron::Port
     properties:
@@ -229,7 +236,7 @@ resources:
     type: OS::Heat::WaitCondition
     properties:
       handle: { get_resource: wait_handle }
-      count: 1
+      count: 2
       timeout: { get_param: heat_timeout }
   primary_waf_instance:
     type: OS::Nova::Server
@@ -348,10 +355,10 @@ resources:
                       monitors:
                         - http
                       members:
-                        - servicePort: 8001
+                        - servicePort: 80
                           serverAddresses:
                             - 34.230.136.58
-                        - servicePort: 8002
+                        - servicePort: 80
                           serverAddresses:
                             - 52.0.57.170
                     WAFPolicy:
@@ -482,10 +489,10 @@ resources:
                       monitors:
                         - http
                       members:
-                        - servicePort: 8001
+                        - servicePort: 80
                           serverAddresses:
                             - 34.230.136.58
-                        - servicePort: 8002
+                        - servicePort: 80
                           serverAddresses:
                             - 52.0.57.170
                     WAFPolicy:
@@ -547,6 +554,9 @@ outputs:
   secondary_f5_appsvcs_extension_public:
     description: Secondary Service Level Declarative REST API
     value: { list_join: ['', ['https://', { get_attr: [ secondary_tmos_mgmt_floating_ip, floating_ip_address ] }, '/mgmt/shared/appsvcs/declare' ]] }
+  tmos_waf:
+    description: TMOS Virtual Server
+    value: { list_join: ['', ['http://', { get_attr: [ service_floating_ip, floating_ip_address ] } ]] }
   tmos_phone_home_url:
     description: Phone Home URL
     value: { get_param: phone_home_url }
