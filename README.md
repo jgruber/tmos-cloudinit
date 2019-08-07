@@ -23,7 +23,7 @@ The cloudinit modules included in this repository need to be file-injected into 
 
 This repository includes a Dockerfile and patch scripts that enable you to build a Docker instance capable of patching standard images from `downloads.f5.com` so that they will include additional cloudinit modules and iControl LX extensions.
 
-From the F5 Downloads site, download all image(s) you wish to patch with these cloudinit modules to a directory available as a volume to your docker instance.
+From the F5 Downloads site, download all image(s) you wish to patch with these cloudinit modules to a directory available as a volume mount to your docker instance (see mounts below).
 
 ```
 ls /data/BIGIP-14.1
@@ -37,7 +37,7 @@ BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2.zip
 BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd.zip
 ```
 
-You can also prepare a directory that contains the iControl LX package `rpm` files that you wish to install.
+You can also prepare a directory that contains any iControl LX extension package `rpm` files that you wish to inject into your image. These packages are installed at boot time when any of the `tmos-cloudinit` modules are enabled.
 
 ```
 $ ls /data/iControlLXLatestBuild
@@ -45,13 +45,15 @@ f5-appsvcs-3.11.0-3.noarch.rpm
 f5-declarative-onboarding-1.4.0-1.noarch.rpm
 ```
 
-#### Note: do not remove the disk images from their archive containers (zip or ova) ####
+#### Note: do not remove the disk images from their archive containers (zip or ova). The utilities in the container do that ase part of the image patching process. ####
 
 Build the docker image from the `tmos_image_patcher` Dockerfile.
 
 ```
 $ docker build -t tmos_image_patcher:latest tmos_image_patcher
 ```
+
+This will download a vanilla Ubuntu 18.04 container, install all the necessary open source utilities required to patch TMOS images, and designate the python script which performs the image patching as the execution entrypoint for the container image.
 
 After the build completes, a docker image will be available locally.
 
@@ -60,13 +62,25 @@ $ docker images | grep tmos_image_patcher
 tmos_image_patcher    latest    3416ed456cfe    22 seconds ago    1.38GB
 ```
 
-Patched images can then be built by creating a `tmos_image_builder` docker instance based on your image.
+Patched images can then be built by running a `tmos_image_builder` docker container instance with the correct volume mounts and `image_patch_file` directory structure defined.
 
-**TODO**: tmos_image_builder needs explanation
+The `tmos_image_builder` container uses open source tools to:
 
-#### Expected Docker Volume Mounts ####
+- decompress the downloaded TMOS image archive for all archives found in the `/TMOSImages` volume mount (see mounts below) directory
+- bind the TMOS disk image partitions
+- mount the logical volumes for `/config`, `/usr`, `/var`, and `/shared` from the bound TMOS file systems
+- copies files specified in the `image_path_files` file directory structure into the TMOS image
+    - the `system_python_path` is a special designation which will resolve the correct TMOS version's python system path directory and inject files to the resolved directory
+- copies all iControl LX extension `rpm` files mounted in the `/iControlLXPackages` volume mount (see mounts below) direcotry to the `/shared/rpms/icontrollx_installs` TMOS directory, ready for installation when any of the `tmos_cloudinit` modules are enabled
+- creates a distribution archive ready for upload to your virtualization image storage services
 
-The docker container uses the mount points listed below. Your TMOS image archives folder should be mounted as a volume to `/TMOSImages`.  The iControl LX extensions you want injected into your image should be mounted to `/iControlLXPackages`.
+When you run the `tmos_image_patcher` container from this repository's root directory, it will find the `image_path_files` directory structure and patch your images with the files found within. This repository's `image_path_files` directory structure is designed to inject all four of `tmos-cloudinit` modules and patch the `cloud-init` configuration file template to load the `tmos-cloudinit` modules properly when TMOS boots.
+
+The open source tools used in the container are all user space utilities, thus the container requires no special privledges other then write access to the diretory where your downloaded TMOS disk archives are mounted (`/TMOSImages` see below).
+
+#### Expected Docker Volume Mounts for the `tmos_image_builder` Container ####
+
+The docker container uses the mount points listed below. Your TMOS image archives folder should be mounted as a volume to the container's `/TMOSImages` directory. Any iControl LX extensions `rpm` packages you want injected into your image should be mounted to the container's `/iControlLXPackages` directory.
 
 | Docker Volume Mount | Required | Description |
 | --------------------- | ----- | ---------- |
@@ -127,7 +141,7 @@ Each TMOS image archive will be expanded into a folder containing the patched im
 └── BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.vhd.zip
 </pre>
 
-As an example, your patched image could be used with OpenStack Glance.
+As an example, your patched image could then be uploaded for use in an OpenStack private cloud.
 
 ```
 $ openstack image create --disk-format qcow2 --container-format bare --file /data/BIGIP-14.1/BIGIP-14.1.0.5-0.0.5.LTM_1SLOT.qcow2/BIGIP-14.1.0.5-0.0.5.qcow2 OpenStack_BIGIP-14.1.0.5-0.0.5.LTM_1SLOT
@@ -160,7 +174,7 @@ Once your patched images are deployed in your virtualized environment, you can u
 
 ## Creating OpenStack Formatted Cloudinit ConfigDrive ISOs - Using a Docker Instance ##
 
-While IaaS clouds already support mechanisms to supply cloudinit userdata to declare guest instances configurations, some virtualization environments do not. For those environments, an ISO CDROM image can be attached to BIG-IP Virtual Edition guest prior to booting it. If the image is formatted as a cloudinit ConfigDrive data source, cloudinit modules can still be used.
+While IaaS clouds already support mechanisms to supply cloudinit userdata to declare guest instances configurations, some virtualization environments do not. For those environments, an ISO CDROM image can be attached to BIG-IP Virtual Edition guests prior to initial booting. If the ISO image is formatted as a cloudinit ConfigDrive data source, cloudinit modules can still be used, even when the virtualization environemtn does not directly support it.
 
 As an example, VMWare Workstation can be use to deploy a BIG-IP Virtual Edition instance from a patched OVA archive. It will build the instance attributes per the F5-defined OVF, and the instance will be powered off. Prior to starting the instance, the user can add an IDE CDROM drive device and attach a ConfigDrive ISO file.
 
@@ -185,6 +199,8 @@ You can build the docker image from the `tmos_configdrive_builder` Dockerfile.
 ```
 $ docker build -t tmos_configdrive_builder:latest tmos_configdrive_builder
 ```
+
+This will use an generic Ubuntu 18.04 image, install all the necessary tools to create ISO image, and designate the python script which creates the ISO image as the execution entrypoint for the container image.
 
 After the build process completes, a docker image will be available locally.
 
