@@ -91,7 +91,7 @@ def patch_images(tmos_image_dir, tmos_cloudinit_dir,
 def scan_for_images(tmos_image_dir):
     """Scan for TMOS disk images"""
     return_image_files = []
-    for image_file in os.listdir(tmos_image_dir):
+    for image_file in [f for f in os.listdir(tmos_image_dir) if not f.startswith('.')]:
         filepath = "%s/%s" % (tmos_image_dir, image_file)
         if os.path.isfile(filepath):
             extract_dir = "%s/%s" % (tmos_image_dir,
@@ -175,7 +175,7 @@ def clean_up_vmdk(disk_image):
             ovf_file_name = file_name
             clean_ovf(os.path.join(convert_dir, file_name))
     ova_name = "%s.ova" % os.path.basename(convert_dir)
-    LOG.info('createing OVA image %s', ova_name)
+    LOG.info('creating OVA image %s', ova_name)
     start_directory = os.getcwd()
     os.chdir(convert_dir)
     ova_file = tarfile.TarFile(ova_name, 'w')
